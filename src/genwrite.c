@@ -67,7 +67,7 @@ main(int argc, char **argv)
     }				/* if (argc != 3) */
     /* Open the device */
     if ((fd = open(argv[1], O_RDWR | O_NDELAY)) < 0) {
-	fprintf(stderr, "%s: %s: %s\n", program_name, argv[1], sys_errlist[errno]);
+	fprintf(stderr, "%s: %s: %s\n", program_name, argv[1], strerror(errno));
 	exit(1);
     }
     /* Line is opened, so DTR and RTS are high. Clear them (can  */

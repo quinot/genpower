@@ -47,6 +47,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
+#include <string.h>
 
 #define MAXSTRING 10
 #define MAXROW	   6
@@ -111,7 +112,7 @@ main(int argc, char **argv)
     /*********************/
     /* Open monitor device. */
     if ((fd = open(argv[1], O_RDWR | O_NDELAY)) < 0) {
-	fprintf(stderr, "%s: %s", argv[1], sys_errlist[errno]);
+	fprintf(stderr, "%s: %s", argv[1], strerror(errno));
 	exit(1);
     }				/* if ((fd = open(argv[1], O_RDWR |
 				 * O_NDELAY)) < 0) */

@@ -242,7 +242,7 @@ main(int argc, char **argv)
     openlog(self, LOG_CONS | LOG_PERROR, LOG_DAEMON);
 
     if ((ups_fd = open(upsport, O_RDWR | O_NDELAY)) < 0) {
-	syslog(LOG_ERR, "%s: %s", upsport, sys_errlist[errno]);
+	syslog(LOG_ERR, "%s: %s", upsport, strerror(errno));
 	closelog();
 	exit(1);
     }
@@ -578,11 +578,11 @@ powerfail(int failure_mode)
     alarm(3);
     if ((fd = open(INIT_FIFO, O_WRONLY)) >= 0) {
 	if (write(fd, &req, sizeof(req)) != sizeof(req)) {
-	    syslog(LOG_ERR, "cannot signal init via %s: %s", INIT_FIFO, sys_errlist[errno]);
+	    syslog(LOG_ERR, "cannot signal init via %s: %s", INIT_FIFO, strerror(errno));
 	}
 	close(fd);
     } else {
-	syslog(LOG_ERR, "cannot signal init via %s: %s", INIT_FIFO, sys_errlist[errno]);
+	syslog(LOG_ERR, "cannot signal init via %s: %s", INIT_FIFO, strerror(errno));
     }
     alarm(0);
 #else
