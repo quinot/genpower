@@ -262,7 +262,7 @@ main(int argc, char **argv)
 
 	    if (pups->kill.line == TIOCM_ST) {
 		/* Send BREAK (TX high) to kill the UPS inverter. */
-		tcsendbreak(ups_fd, 10 * pups->killtime);
+		tcsendbreak(ups_fd, 1000 * pups->killtime);
 	    } else {
 		/* Force high to send the UPS the inverter kill signal. */
 		setlevel(ups_fd, pups->kill.line, pups->kill.inverted);

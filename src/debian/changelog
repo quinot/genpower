@@ -1,3 +1,10 @@
+genpower (1.0.5-1) unstable; urgency=low 
+
+  * Fixed problem with kill-inverter time being 1/100 of specified time (closes: #280731)
+
+ -- Brian White <bcwhite@pobox.com>  Tue,  4 Jan 2005 17:18:24 -0500
+
+  
 genpower (1.0.4-1) unstable; urgency=low 
 
   * Corrected problem copying strings from config file (closes: #190206)
