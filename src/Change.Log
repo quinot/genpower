@@ -1,6 +1,14 @@
 genpower Change Log
+-------------------
 
-1.0.2 (Feb/06/2001)
+$Id$
+
+1.0.3 (upcoming)
+Merged non-Debian-specific patches from Brian White's Debian package.
+Cleanup the code and make it portable to other operating systems than
+Linux.
+
+1.0.2 (2001-02-06)
 Small addition of support for Tripplite Omnismart 450 PNP
 with 73-0724 Cable and running RedHat Linux 6.2 (Intel)
 

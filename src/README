@@ -1,24 +1,38 @@
-genpower-1.0.2 Feb/05/2001
+genpower README
+---------------
 
-This is version 1.0.2 of genpower, this version contains a small
-modification over version 1.0.1, it adds support for Tripplite
-Omnismart PNP series and was tested with RedHat Linux 6.2, the rest of code 
-is the same of Tom Webster's version.
-  by Jhon H. Caicedo O. <jhcaiced@osso.org.co>
-  Observatorio Sismologico del SurOccidente O.S.S.O
+$Id$
 
-------------------------------------------------------------------  
-This is the 1.0.1 release of the genpower (Generic Power 
-Monitoring for Linux) package.  In reality, this is a maintenance 
-release of the unipower package under a new name.  I was 
-requested to change the name by a firm that is marketing software 
-under the name UniPOWER.
-  by Tom Webster <webster@kaiwan.com>
-  v.1.0.1        1995/07/05
-  
+This is the 1.0.3 release of the genpower (Generic Power 
+Monitoring for *nix) package. Genpower was once known as Unipower,
+but its name was changed because of trademark issues.
 
+The code was originally written by Tom Webster <webster@kaiwan.com>,
+and was subsequently modified by:
+  Brian White <bcwhite@pobox.com>
+  Jhon H. Caicedo O. <jhcaiced@osso.org.co>
+  Thomas Quinot <thomas@cuivre.fr.eu.org>
 
-NEW FEATURES:
+The project is now hosted as SourceForge:
+  http://genpower.sourceforge.net/
+
+FEATURES ADDED IN 1.0.3
+
+ * Bug fixes and portability enhancements.
+
+ * Support for the following UPS units:
+   OneUPS+
+   TrippLite OmniSmart PNP 675
+   APC Back-UPS Pro (several cable types)
+   Blackout Buster
+   USV 500P
+   Trust Energy Protector
+
+FEATURES ADDED IN 1.0.2
+
+ * Support for Tripplite Omnismart 450 PNP.
+
+FEATURES ADDED IN 1.0.1
 
  * Users can now select from preconfigured UPS and cable 
    configurations at runtime.  With a sufficient body of UPS and 
