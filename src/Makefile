@@ -1,20 +1,23 @@
-########################################
-#                                      #
-# Makefile for genpowerd.              #
-# by Tom Webster <webster@kaiwan.com>  #
-# v.1.0.1        1995/07/05            #
-#                                      #
-######################################## 
+#
+# Makefile for genpowerd
+# $Id$
+#
 
-NAME  		= genpower-1.0.1
-BINDIR 		= /sbin
-SCRIPTDIR 	= /etc
-MANDIR		= /usr/man/man8
-OWNER 		= root
-GROUP 		= root
+NAME=		genpower-1.0.1
+BINDIR=		/sbin
+SCRIPTDIR=	/etc
+MANDIR=		/usr/man/man8
+OWNER=		root
+GROUP=		root
 
-CC		= cc
-CFLAGS		= -N -Wall -O6
+CC= cc
+CFLAGS=		-Wall -O2 -pipe
+
+# Linux:
+#CFLAGS+=	-DNEWINIT
+
+# FreeBSD
+#CFLAGS+=	-DUPSSTAT=\"/var/run/upsstatus\" -DRC_POWERFAIL=\"/usr/local/etc/rc.powerfail\"
 
 all:		genpowerd gentest
 
@@ -25,28 +28,30 @@ genpowerd:	genpowerd.c genpowerd.h
 gentest:	gentest.c
 		${CC} ${CFLAGS} $@.c -o $@
 
+genwrite:	genwrite.c
+		${CC} ${CFLAGS} $@.c -o $@
+
 clean:
-		rm -f *.o *.bak genpowerd gentest
+		rm -f *.o *.bak genpowerd gentest genwrite
 
 install:	binstall manstall
 
 binstall:	genpowerd 
-		cp -f genpowerd ${BINDIR}
+		cp -f genpowerd genwrite ${BINDIR}
 		cd ${BINDIR}; \
-		chmod 754 genpowerd; \
+		chmod 755 genpowerd; \
 		chgrp ${GROUP} genpowerd; \
 		chown ${OWNER} genpowerd
 		cp -f genpowerfail ${SCRIPTDIR}
 		cd ${SCRIPTDIR}; \
-		chmod 754 genpowerfail; \
+		chmod 755 genpowerfail; \
 		chgrp ${GROUP} genpowerfail; \
 		chown ${OWNER} genpowerfail
 
 manstall:	
 		cp -f genpowerd.8 ${MANDIR}
 
-clobber:
-		rm -f *.o *.bak genpowerd gentest
+clobber:	clean
 		cd ${BINDIR}; \
 		rm -f genpowerd
 		cd ${SCRIPTDIR}; \
