@@ -1,6 +1,9 @@
 genpower (1.0.4-1) unstable; urgency=low 
 
   * Corrected problem copying strings from config file (closes: #190206)
+  * Now reads config file during startup (closes: #199267)
+  * Minor source-code cleanup (closes: #190198)
+  * Write messages to syslog (closes: #206096)
 
  -- Brian White <bcwhite@pobox.com>  Sat, 17 Jan 2004 23:09:35 -0500
 
