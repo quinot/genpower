@@ -3,7 +3,10 @@ genpower Change Log
 
 $Id$
 
-1.0.3 (upcoming)
+1.0.4 (2004-01-17)
+Fixed problem parsing config file.
+
+1.0.3 (done)
 Merged non-Debian-specific patches from Brian White's Debian package.
 Cleanup the code and make it portable to other operating systems than
 Linux.

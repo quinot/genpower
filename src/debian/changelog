@@ -1,3 +1,10 @@
+genpower (1.0.4-1) unstable; urgency=low 
+
+  * Corrected problem copying strings from config file (closes: #190206)
+
+ -- Brian White <bcwhite@pobox.com>  Sat, 17 Jan 2004 23:09:35 -0500
+
+  
 genpower (1.0.3-1) unstable; urgency=low 
 
   * Finally got around to getting new source from sf.net (closes: #107511)
