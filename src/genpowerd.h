@@ -1,3 +1,22 @@
+/*
+ File        : genpowerd.h
+ Project     : genpower-1.0.2
+               Observatorio Sismologico del SurOccidente O.S.S.O
+ Author(s)   : Jhon H. Caicedo O. <jhcaiced@osso.org.co>
+ Description : Header file for genpowerd
+
+ History     :
+ 1.0.2
+ ------
+ Feb/05/2001   Added the definition for Tripplite Omnismart 450 PNP
+               with a 73-0724 cable, it works using Tx line for 
+               Inverter Shutdown, CTS for detecting PowerFail,
+               CAR (CD) for Low Battery Alarm and a GND Line (jhcaiced)
+               Added the field "id" to the UPS definitions, this makes
+               easy to run specific commands based on UPS model.
+ Feb/05/2001   Modified from version 1.0.1, to add more UPSs (jhcaiced)
+ ------------------------------------------------------------------------
+*/
 /************************************************************************/
 /* File Name            : genpowerd.h                                   */
 /* Program Name         : genpowerd                   Version: 1.0.1    */
@@ -51,6 +70,7 @@ typedef struct{
 /************************************************************************/
 
 struct {
+	int id;	/* Used to select specific commands */
         char *tag;
         LINE    cablepower, kill;               /* outputs -> INACTIVE Level*/
         int     killtime;                       /* killtime 0 -> Option -k is not supported ! */
@@ -59,27 +79,31 @@ struct {
 
 /* The lines inside these brackets may be edited to fit your UPS/cable.  Do NOT remove the {NULL} entry! */
 
-/* type          cablep1        kill           t  powerok        battok         cableok */
+/* id type          cablep1        kill           t  powerok        battok         cableok */
 
 /* Miquel's powerd cable */
- {"powerd",      {TIOCM_RTS,0}, {TIOCM_DTR,1}, 0, {TIOCM_CAR,0}, {0,0},         {TIOCM_DSR,0}},
+ {0, "powerd",      {TIOCM_RTS,0}, {TIOCM_DTR,1}, 0, {TIOCM_CAR,0}, {0,0},         {TIOCM_DSR,0}},
 
 /* Classic TrippLite */
- {"tripp-class", {TIOCM_RTS,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,0}, {0,0},         {0,0}},
+ {1, "tripp-class", {TIOCM_RTS,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,0}, {0,0},         {0,0}},
 
 /* TrippLite WinNT */
- {"tripp-nt",    {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,1}, {0,0}},
+ {2, "tripp-nt",    {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,1}, {0,0}},
 
 /* Lam's APC Back-UPS, Victron Lite WinNT */
- {"apc1-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}},
+ {3, "apc1-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}},
 
 /* Jim's APC Back-UPS WinNT */
- {"apc2-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,0}, {0,0}},
+ {4, "apc2-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,0}, {0,0}},
 
 /* Marek's APC Back-UPS */
- {"apc-linux",   {TIOCM_DTR,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,1}, {TIOCM_DSR,0}, {0,0}},
+ {5, "apc-linux",   {TIOCM_DTR,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,1}, {TIOCM_DSR,0}, {0,0}},
 
- {NULL}
+/* Feb/05/2001 Tripplite Omnismart 450 PNP
+   Jhon H. Caicedo <jhcaiced@osso.org.co> O.S.S.O */
+ {6, "omnismart-pnp",  {TIOCM_RTS,1}, {TIOCM_RTS,1},  5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}},
+
+ {-1, NULL}
 };
 
 /* The following are the RS232 control lines      */

@@ -1,8 +1,21 @@
+genpower-1.0.2 Feb/05/2001
+
+This is version 1.0.2 of genpower, this version contains a small
+modification over version 1.0.1, it adds support for Tripplite
+Omnismart PNP series and was tested with RedHat Linux 6.2, the rest of code 
+is the same of Tom Webster's version.
+  by Jhon H. Caicedo O. <jhcaiced@osso.org.co>
+  Observatorio Sismologico del SurOccidente O.S.S.O
+
+------------------------------------------------------------------  
 This is the 1.0.1 release of the genpower (Generic Power 
 Monitoring for Linux) package.  In reality, this is a maintenance 
 release of the unipower package under a new name.  I was 
 requested to change the name by a firm that is marketing software 
 under the name UniPOWER.
+  by Tom Webster <webster@kaiwan.com>
+  v.1.0.1        1995/07/05
+  
 
 
 NEW FEATURES:

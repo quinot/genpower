@@ -1,5 +1,9 @@
 genpower Change Log
 
+1.0.2 (Feb/06/2001)
+Small addition of support for Tripplite Omnismart 450 PNP
+with 73-0724 Cable and running RedHat Linux 6.2 (Intel)
+
 1.0.1 (1995/07/07)
 
 The package has been renamed to genpower (Generic Power 

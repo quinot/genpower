@@ -1,3 +1,16 @@
+/*
+ File        : genpowerd.c
+ Project     : genpower-1.0.2
+               Observatorio Sismologico del SurOccidente O.S.S.O
+ Author(s)   : Jhon H. Caicedo O. <jhcaiced@osso.org.co>
+ Description : Header file for genpowerd
+
+ History     :
+ 1.0.2
+ ------
+ Feb/05/2001   Modified from version 1.0.1, to add more UPSs (jhcaiced)
+ ------------------------------------------------------------------------
+*/
 /************************************************************************/
 /* File Name            : genpowerd.c                                   */
 /* Program Name         : genpowerd                   Version: 1.0.1    */
@@ -113,6 +126,7 @@ int main(int argc, char **argv) {
         int tries = 0;
         int ikill = 0;
         char *program_name;
+        char killchar = ' ';
 
 
         program_name = argv[0];
@@ -172,6 +186,16 @@ int main(int argc, char **argv) {
                         	sleep(pups->killtime);
 			}				/* if (pups->kill.line == TIOCM_ST) */
             		ioctl(fd, TIOCMGET, &flags);
+
+            		/* Feb/05/2001 Added support for Tripplite Omnismart
+            		   450PNP, this UPS shutdowns inverter when data is 
+            		   sent over the Tx line (jhcaiced) */
+            		if (pups->id == 6)
+            		{
+            			sleep(2);
+            			write(fd, &killchar, 1);
+            		}
+
                        	close(fd);
 
                         /************************************************************/
