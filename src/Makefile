@@ -17,13 +17,15 @@ CFLAGS=		-Wall -O2 -pipe
 #CFLAGS+=	-DNEWINIT
 
 # FreeBSD
-#CFLAGS+=	-DUPSSTAT=\"/var/run/upsstatus\" -DRC_POWERFAIL=\"/usr/local/etc/rc.powerfail\"
+#CFLAGS+=	-DUPSSTAT=\"/var/run/upsstatus\" \
+#		-DRC_POWERFAIL=\"/usr/local/etc/rc.powerfail\" \
+#		-DGENPOWERD_CONF=\"/usr/local/etc/genpowerd.conf\"
 
 all:		genpowerd gentest
 
 
 genpowerd:	genpowerd.c genpowerd.h
-		${CC} ${CFLAGS} $@.c -o $@
+		${CC} ${CFLAGS} genpowerd.c -o $@
 
 gentest:	gentest.c
 		${CC} ${CFLAGS} $@.c -o $@
@@ -66,20 +68,3 @@ oldclobber:
 		rm -f unipowerd.8
 
 upgrade:	oldclobber install
-
-tgz:
-		@if [ -f $(NAME).tgz ]; \
-		then \
-			echo "Removing old archive..."; \
-			rm $(NAME).tgz; \
-		fi
-		@echo Creating tar archive...
-		@ cd ..; \
-		ls -l $(NAME) > Packing.List; \
-		mv Packing.List $(NAME);\
-		touch $(NAME)/*; \
-		ls -l $(NAME) > Packing.List; \
-		mv Packing.List $(NAME);\
-		tar cvfz $(NAME).tgz $(NAME); \
-		mv $(NAME).tgz $(NAME)
-		@echo Tar archive created

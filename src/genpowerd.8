@@ -6,7 +6,27 @@ genpowerd \- UPS monitor daemon
 .B /sbin/genpowerd
 [
 .B \-k
-] tty ups-type
+]
+[
+.B \-c
+.I configfile
+]
+[
+.B \-d
+.I upsport
+]
+[
+.B \-r
+.I rcpowerfail
+]
+[
+.B \-s
+.I upsstat
+]
+[
+.B \-t
+.I upstype
+]
 .SH DESCRIPTION
 .I Genpowerd
 monitors the serial port connected to an UPS device
@@ -20,11 +40,31 @@ and [wiring details to be added.]  Please refer to the
 documentation for further information.
 .SH ARGUMENTS
 .TP
-.I Serial-Device
+.I configfile
+Path to the configuration file
+.B genpowerd.conf .
+This file contains UPS type definitions, and may also containts default
+parameter assignments.
+.TP
+.I upsport
 Some serial port that is not being used by some other device, and does not
 share an interrupt with any other serial port.
 .TP
-.I UPS-Type
+.I rcpowerfail
+Path to the
+.B rc.powerfail
+script, which is executed when a power event occurs.
+The name of the event is passed as the only command line
+argument to the script, and also written to the
+.B upsstat
+file.
+.TP
+.I upsstat
+Path to the
+.B upsstat
+file, where the name of the current power event is written.
+.TP
+.I upstype
 A text string identifying the UPS and cable combination that genpowerd is
 to monitor.  If genpowerd is envoked without any arguments, a list of
 available configurations will be displaied.
@@ -44,11 +84,13 @@ at runtime.
 .SH ENVIRONMENT VARIABLES
 Unipowerd does not use environment variables.
 .SH FILES
-/etc/powerstatus		indicates line power status
+genpowerd.conf		configuration file
 .br
-/etc/upsstatus			indicates UPS battery status
+upsstat			indicates UPS battery status
 .br
-/etc/genpowerfail		script to manage power failures
+rc.powerfail		script to manage power failures
+.br
+powerstatus		indicates line power status (Linux only)
 .SH BUGS
 Well, not a real bug but 
 .I genpowerd 

@@ -48,12 +48,15 @@
  
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <fcntl.h>
+#include <sys/wait.h>
+#include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <signal.h>
+#include <string.h>
 #include <syslog.h>
 #include <termios.h>
 #include "genpowerd.h"
@@ -62,7 +65,42 @@
 #include <initreq.h>
 #endif
 
-char *str_line(int l)
+/* Parameters (can be set from the command line or through the
+   config file */
+
+/* Global parameters and default values */
+#ifndef UPSPORT
+#define UPSPORT "/dev/ups"
+#endif
+static char *upsport = UPSPORT;
+
+#ifndef UPSSTAT
+#define UPSSTAT		"/etc/upsstatus"
+#endif
+static char *upsstat = UPSSTAT;
+
+#ifndef RC_POWERFAIL
+#define RC_POWERFAIL	"/etc/rc.powerfail"
+#endif
+static char *rcpowerfail = RC_POWERFAIL;
+
+static char *upstype = NULL;
+
+#if defined (__Linux__) && !defined (NEWINIT)
+/* Create a flag file for Miquel van Smoorenburg's SysV init. */
+#define PWRSTAT         "/etc/powerstatus"
+#endif
+
+#ifndef GENPOWERD_CONF
+#define GENPOWERD_CONF	"/etc/genpowerd.conf"
+#endif
+static char *config_file = GENPOWERD_CONF;
+
+static struct upsdef *ups;
+
+static void parse_config (char*);
+
+static char *str_line(int l)
 {
   switch(l){  
   case TIOCM_RTS: return "RTS";
@@ -76,7 +114,7 @@ char *str_line(int l)
   }
 }
 
-char *str_neg(int s)
+static char *str_neg(int s)
 {
   if (s) return "/"; else return " ";
 }
@@ -86,8 +124,9 @@ void list_ups()
 {
   int maxlen = 0, len;
   char buf[255], *c;
+  struct upsdef *pups;
 
-  for (pups=ups; pups->tag; pups++)
+  for (pups=ups; pups; pups = pups->next)
     if ((len = strlen (pups->tag)) > maxlen)
       maxlen = len;
 
@@ -96,7 +135,7 @@ void list_ups()
   for (c = buf; *c; c++)
     *c = '-';
   fprintf(stderr,  "    %s---------------------------------------\n", buf);
-  for (pups=ups; pups->tag; pups++){
+  for (pups=ups; pups; pups = pups->next){
       fprintf(stderr,"    %-*s  %s%s    %s%s %2d %s%s    %s%s   %s%s\n",maxlen,
         pups->tag,
         str_neg(pups->cablepower.inverted),str_line(pups->cablepower.line),
@@ -120,9 +159,17 @@ void powerfail(int);
 #define PFM_CABLE 3
 char *powerfail_msg[] = { "OK", "FAIL", "SCRAM", "CABLE" };
 
-/* Main program. */
-int main(int argc, char **argv) {
-        int fd, fd2;
+static void
+usage (char *self) {
+    fprintf (stderr, "Usage: %s [-k] [-c configfile] [-d upsport] [-r rcpowerfail]\n"
+	     "         [-s upsstat] [-t upstype]\n", self);
+    list_ups ();
+    exit (1);
+}
+
+int
+main(int argc, char **argv) {
+        int ups_fd, stat_fd, ch;
         int flags;
         int pstatus, poldstat = 1;
         int bstatus, boldstat = 1;
@@ -130,80 +177,95 @@ int main(int argc, char **argv) {
         int tries = 0;
         int ikill = 0;
         int ioctlbit;
-        char *program_name;
+        char *self = argv[0];
         char killchar = ' ';
+	struct upsdef *pups;
 
+	while ((ch = getopt(argc, argv, "kc:d:r:s:t:")) != -1)
+	    switch (ch) {
+	    case 'k':
+		ikill = 1;
+		break;
+	    case 'c':
+		config_file = optarg;
+		break;
+	    case 'd':
+		upsport = optarg;
+		break;
+	    case 'r':
+		rcpowerfail = optarg;
+		break;
+	    case 's':
+		upsstat = optarg;
+		break;
+	    case 't':
+		upstype = optarg;
+		break;
+	    case '?':
+	    default:
+		usage(self);
+	    }
+	argc -= optind;
+	argv += optind;
+	if (argc > 0)
+	    usage(self);
 
-        program_name = argv[0];
-        /* Parse the command line */
-        while ((argc > 1) && (argv[1][0] == '-')) {
-                switch (argv[1][1]) {
-                  case 'k':
-                        ikill = 1;
-                        break;
-                  default:
-                        fprintf(stderr, "\nUsage: %s [-k] <device> <ups-type>\n", program_name);                                             
-                        exit(1);
-                }                                       /* switch (argv[1][1]) */
-                argv++;
-                argc--;
-        }                                               /* while ((argc > 1) && (argv[1][0] == '-')) */
-        
-        /* Done with options, make sure that one port is specified */
-        if (argc != 3) {
-                fprintf(stderr, "\nUsage: %s [-k] <device> <ups-type>\n", program_name);
-                list_ups();  
+	parse_config (config_file);
+
+        if (upsport == NULL || upstype == NULL) {
+	    usage (self);
+        }
+
+        for (pups=ups; pups; pups = pups->next){
+                if (strcmp(pups->tag, upstype)==0) break;
+        }
+        if (!pups){
+                fprintf(stderr, "Error: %s: UPS <%s> unknown\n", self,argv[2]);
                 exit(1);
-        }                            			/* if (argc != 3) */
+        }
+        
+        /* Start syslog. */
+        openlog(self, LOG_CONS|LOG_PERROR, LOG_DAEMON);
 
-        
-        for (pups=ups; pups->tag; pups++){
-                if (strcmp(pups->tag,argv[2])==0) break;
-        }						/* for (pups=ups; pups->tag; pups++) */
-        if (!pups->tag){
-                fprintf(stderr, "Error: %s: UPS <%s> unknown\n", program_name,argv[2]);
-                exit(1);
-        }						/* if (!pups->tag) */
-        
-                
+	if ((ups_fd = open(upsport, O_RDWR | O_NDELAY)) < 0) {
+                syslog(LOG_ERR, "%s: %s", upsport, sys_errlist[errno]);
+                closelog();
+		exit(1);
+	}
+
         /* Kill the inverter and close out if inverter kill was selected */
         if (ikill) {
                 if (pups->killtime) {
-                       if ((fd = open(argv[1], O_RDWR | O_NDELAY)) < 0) {
-                                fprintf(stderr, "%s: %s: %s\n",program_name, argv[1], sys_errlist[errno]);
-                                exit(1);
-                        } 				/* if ((fd = open(argv[1], O_RDWR | O_NDELAY)) < 0) */
 
 			/* Explicitly clear both DTR and RTS as soon as possible  */
 			ioctlbit = TIOCM_RTS;
-        		ioctl(fd, TIOCMBIC, &ioctlbit);
+        		ioctl(ups_fd, TIOCMBIC, &ioctlbit);
 			ioctlbit = TIOCM_DTR;
-        		ioctl(fd, TIOCMBIC, &ioctlbit);
+        		ioctl(ups_fd, TIOCMBIC, &ioctlbit);
 
  		       /* clear killpower, apply cablepower to enable monitoring */
-        		setlevel(fd,pups->kill.line,!pups->kill.inverted);
-      			setlevel(fd,pups->cablepower.line,!pups->cablepower.inverted);
+        		setlevel(ups_fd,pups->kill.line,!pups->kill.inverted);
+      			setlevel(ups_fd,pups->cablepower.line,!pups->cablepower.inverted);
         
 			if (pups->kill.line == TIOCM_ST) {
 	                        /* Send BREAK (TX high) to kill the UPS inverter. */
- 	                       tcsendbreak (fd, 10*pups->killtime);
+ 	                       tcsendbreak (ups_fd, 10*pups->killtime);
 			} else {
                         	/* Force high to send the UPS the inverter kill signal. */
-                        	setlevel(fd,pups->kill.line,pups->kill.inverted);
+                        	setlevel(ups_fd,pups->kill.line,pups->kill.inverted);
                         	sleep(pups->killtime);
-			}				/* if (pups->kill.line == TIOCM_ST) */
-            		ioctl(fd, TIOCMGET, &flags);
+			}
+            		ioctl(ups_fd, TIOCMGET, &flags);
 
             		/* Feb/05/2001 Added support for Tripplite Omnismart
             		   450PNP, this UPS shutdowns inverter when data is 
             		   sent over the Tx line (jhcaiced) */
-            		if (pups->flags & UPS_TXD_KILL_INVERTER)
-            		{
+            		if (pups->flags & UPS_TXD_KILL_INVERTER) {
             			sleep(2);
-            			write(fd, &killchar, 1);
+            			write(ups_fd, &killchar, 1);
             		}
 
-                       	close(fd);
+                       	close(ups_fd);
 
                         /************************************************************/
                         /* We never should have gotten here.                        */
@@ -213,7 +275,7 @@ int main(int argc, char **argv) {
                         /* reboot.                                                  */
                         /************************************************************/
                         if (getlevel(&pups->powerok,flags) == 0) {
-                                fprintf(stderr, "%s: UPS inverter kill failed.\n", program_name);
+                                fprintf(stderr, "%s: UPS inverter kill failed.\n", self);
                                 exit(1);
                         }				/* if (getlevel(&pups->powerok,flags) == 0) */
 
@@ -221,7 +283,7 @@ int main(int argc, char **argv) {
                        	exit(0);
                 } else {
                         fprintf(stderr, "Error: %s: UPS <%s> has no support for killing the inverter.\n", 
-                                        program_name,pups->tag);
+                                        self,pups->tag);
                         exit(1);
                 }                                       /* if (pups->kill) */
         }                                               /* if (ikill) */
@@ -230,24 +292,13 @@ int main(int argc, char **argv) {
         /* If no kill signal, monitor the line. */
         /****************************************/
 
-        /* Start syslog. */
-        openlog(program_name, LOG_CONS|LOG_PERROR, LOG_DAEMON);
-
-        /* Open monitor device. */
-        if ((fd = open(argv[1], O_RDWR | O_NDELAY)) < 0) {
-                syslog(LOG_ERR, "%s: %s", argv[1], sys_errlist[errno]);
-                closelog();
-                exit(1);
-        } 						/* if ((fd = open(argv[1], O_RDWR | O_NDELAY)) < 0) */
-
-   
 	/* Explicitly clear both DTR and RTS as soon as possible  */
-        ioctl(fd, TIOCMBIC, TIOCM_RTS);
-        ioctl(fd, TIOCMBIC, TIOCM_DTR);
+        ioctl(ups_fd, TIOCMBIC, TIOCM_RTS);
+        ioctl(ups_fd, TIOCMBIC, TIOCM_DTR);
 
         /* clear killpower, apply cablepower to enable monitoring */
-        setlevel(fd,pups->kill.line,!pups->kill.inverted);
-        setlevel(fd,pups->cablepower.line,!pups->cablepower.inverted);
+        setlevel(ups_fd,pups->kill.line,!pups->kill.inverted);
+        setlevel(ups_fd,pups->cablepower.line,!pups->cablepower.inverted);
 
         /* Daemonize. */
         switch(fork()) {
@@ -265,14 +316,14 @@ int main(int argc, char **argv) {
         }                                       	/* switch(fork()) */
 
         /* Restart syslog. */
-        openlog(program_name, LOG_CONS, LOG_DAEMON);
+        openlog(self, LOG_CONS, LOG_DAEMON);
 
         /* Create an info file for powerfail scripts. */
         unlink(UPSSTAT);
-        if ((fd2 = open(UPSSTAT, O_CREAT|O_WRONLY, 0644)) >= 0) {
-                write(fd2, "OK\n", 3);
-                close(fd2);
-        }						/* if ((fd2 = open(UPSSTAT, O_CREAT|O_WRONLY, 0644)) >= 0) */
+        if ((stat_fd = open(UPSSTAT, O_CREAT|O_WRONLY, 0644)) >= 0) {
+                write(stat_fd, "OK\n", 3);
+                close(stat_fd);
+        }
  
 	/* Give the UPS a chance to reach a stable state. */
 	sleep(2);
@@ -280,7 +331,7 @@ int main(int argc, char **argv) {
         /* Now sample the line. */
         while(1) {
                 /* Get the status. */
-                ioctl(fd, TIOCMGET, &flags);
+                ioctl(ups_fd, TIOCMGET, &flags);
                 
                 /* Calculate present status. */
                 pstatus = getlevel(&pups->powerok,flags);
@@ -294,7 +345,7 @@ int main(int argc, char **argv) {
                 	        if ((tries % 60) == 0) syslog(LOG_ALERT, "UPS connection error");
                 	        sleep(2);
                 	        tries++;
-                	        ioctl(fd, TIOCMGET, &flags);
+                	        ioctl(ups_fd, TIOCMGET, &flags);
                 	}				/* while(getlevel(&pups->cableok,flags) */
                 	if (tries > 0) syslog(LOG_ALERT, "UPS connection OK");
             	} else {
@@ -363,11 +414,8 @@ int main(int argc, char **argv) {
 	}       /* while(1) */
 	/* Never happens */
 	return(0);
-}                                                       /* main */
-/************************************************************************/
-/* End of Function main                                                 */
-/************************************************************************/
- 
+}
+
 /************************************************************************/
 /* Function             : getlevel                                      */
 /* Author               : Erwin Authried <erwin@ws1.atv.tuwien.ac.at>   */
@@ -386,13 +434,10 @@ int main(int argc, char **argv) {
 /*                      : to see if it is in normal or failure mode.    */
 /*                                                                      */
 /************************************************************************/ 
-int getlevel(LINE *l,int flags)
+int
+getlevel(LINE *l,int flags)
 {
-int ret;  
-
-  if (!l->line) return 1;               /* normal mode */
-  ret = l->line & flags;
-  return (l->inverted) ? !ret: ret;
+    return (!l->line) || (((l->line & flags) != 0) ^ l->inverted);
 }
 
 /************************************************************************/
@@ -413,12 +458,10 @@ int ret;
 /* Purpose              :  set/clear the specified output line          */
 /*                                                                      */
 /************************************************************************/ 
-void setlevel(int fd,int line,int level)
-{
-int bit;
-  if (line==0 || line==TIOCM_ST) return;
-  bit = line;
-  ioctl(fd, (level) ? TIOCMBIS:TIOCMBIC, &bit);
+void
+setlevel(int fd, int line, int level) {
+    if (line == 0 || line == TIOCM_ST) return;
+    ioctl (fd, (level) ? TIOCMBIS:TIOCMBIC, &line);
 }
 
 #ifdef NEWINIT
@@ -428,7 +471,8 @@ int bit;
 /* Returns                             : nothing                                       */
 /* Purpose                             : empty signal handler for timeout in powerfail */
 /***************************************************************************************/
-void alrm_handler ()
+void
+alrm_handler ()
 {
 }
 #endif
@@ -450,74 +494,213 @@ void alrm_handler ()
 /*                                                                      */
 /************************************************************************/                                                
 
-void powerfail(int ok)
-{
-        int fd;
+void
+powerfail (int failure_mode) {
+    int fd;
 #ifdef NEWINIT
-        struct init_request req;
+    struct init_request req;
 #endif
 
 #ifdef PWRSTAT
-        /* Create an info file for init. */
-        unlink(PWRSTAT);
-        if ((fd = open(PWRSTAT, O_CREAT|O_WRONLY, 0644)) >= 0) {
-                if (ok) {
-                        /* Problem */
-                        write(fd, "FAIL\n", 5);
-                } else {
-                        /* No problem */
-                        write(fd, "OK\n", 3);
-                }                                       /* if (ok) */
-                close(fd);
-        }
+    /* Create an info file for init. */
+    unlink(PWRSTAT);
+    if ((fd = open(PWRSTAT, O_CREAT|O_WRONLY, 0644)) >= 0) {
+	if (failure_mode) {
+	    /* Problem */
+	    write(fd, "FAIL\n", 5);
+	} else {
+	    /* No problem */
+	    write(fd, "OK\n", 3);
+	}
+	close(fd);
+    }
 #endif
 
-        /* Create an info file for powerfail scripts. */
-        unlink(UPSSTAT);
-        if ((fd = open(UPSSTAT, O_CREAT|O_WRONLY, 0644)) >= 0) {
-                switch(ok) {
-                        case PFM_OK: /* Power OK */
-                        case PFM_FAIL: /* Line Fail */
-                        case PFM_SCRAM: /* Line Fail and Low Batt */
-                        case PFM_CABLE: /* Bad cable? */
-                                break;
-                        default: /* Should never get here */
-				ok = PFM_SCRAM;
-                }                                       /* Switch(ok) */
-                write(fd, powerfail_msg[ok], strlen (powerfail_msg[ok]));
-                write(fd, "\n", 1);
-                close(fd);
-        }
+    /* Create an info file for powerfail scripts. */
+    unlink(upsstat);
+    if ((fd = open(upsstat, O_CREAT|O_WRONLY, 0644)) >= 0) {
+	switch(failure_mode) {
+	case PFM_OK: /* Power OK */
+	case PFM_FAIL: /* Line Fail */
+	case PFM_SCRAM: /* Line Fail and Low Batt */
+	case PFM_CABLE: /* Bad cable? */
+	    break;
+	default: /* Should never get here */
+	    failure_mode = PFM_SCRAM;
+	}                                       /* Switch(failure_mode) */
+	write(fd, powerfail_msg[failure_mode], strlen (powerfail_msg[failure_mode]));
+	write(fd, "\n", 1);
+	close(fd);
+    }
+
 #ifdef PWRSTAT
-        kill(1, SIGPWR);
+    kill(1, SIGPWR);
 #elif defined(NEWINIT)
-       /* Fill out the request struct. */
-       memset (&req, 0, sizeof (req));
-       req.magic = INIT_MAGIC;
+    /* Fill out the request struct. */
+    memset (&req, 0, sizeof (req));
+    req.magic = INIT_MAGIC;
 # if 0
-        req.cmd   = ok ? INIT_CMD_POWEROK : INIT_CMD_POWERFAIL;
+    req.cmd   = failure_mode ? INIT_CMD_POWEROK : INIT_CMD_POWERFAIL;
 # else
-        req.cmd   =
-                         ok == 0 ? INIT_CMD_POWEROK :
-                         ok == 2 ? INIT_CMD_POWERFAILNOW :
-                                               INIT_CMD_POWERFAIL;
+    req.cmd   =
+	failure_mode == 0 ? INIT_CMD_POWEROK :
+	failure_mode == 2 ? INIT_CMD_POWERFAILNOW :
+	INIT_CMD_POWERFAIL;
 # endif
-
-        /* Open the fifo (with timeout) */
-        signal (SIGALRM, alrm_handler);
-        alarm (3);
-        if ((fd = open (INIT_FIFO, O_WRONLY)) >= 0
-                && write (fd, &req, sizeof (req)) == sizeof (req)) {
-          close (fd);
-          return;
-        } else {
-          syslog(LOG_ERR,"cannot signal init via %s: %s",INIT_FIFO,sys_errlist[errno]);
-        }
-        alarm (0);
+    
+    /* Open the fifo (with timeout) */
+    signal (SIGALRM, alrm_handler);
+    alarm (3);
+    if ((fd = open (INIT_FIFO, O_WRONLY)) >= 0
+	&& write (fd, &req, sizeof (req)) == sizeof (req)) {
+	close (fd);
+	return;
+    } else {
+	syslog(LOG_ERR,"cannot signal init via %s: %s",INIT_FIFO,sys_errlist[errno]);
+    }
+    alarm (0);
 #else
-	system (RC_POWERFAIL);
+    {
+	int child = fork (), rc;
+	
+	switch (child) {
+	case -1:
+	    break;
+	case 0:
+	    execl (rcpowerfail, rcpowerfail,
+		   powerfail_msg[failure_mode], NULL);
+	    break;
+	default:
+	    waitpid (child, &rc, 0);
+	    break;
+	}
+    }
 #endif
 }
 /************************************************************************/
 /* End of Function powerfail                                            */
 /************************************************************************/
+
+static int
+parse_line (char *s, LINE *l) {
+  if (*s == '/') {
+    l->inverted = 1;
+    s++;
+  } else {
+    l->inverted = 0;
+  }
+#define CFG_LINE(lineid) \
+  if (!strcasecmp (s, #lineid)) l->line = TIOCM_ ## lineid
+
+  CFG_LINE (LE);
+  else CFG_LINE (DTR);
+  else CFG_LINE (RTS);
+  else CFG_LINE (ST);
+  else CFG_LINE (SR);
+  else CFG_LINE (CTS);
+  else CFG_LINE (CAR);
+  else CFG_LINE (CD);
+  else CFG_LINE (RNG);
+  else CFG_LINE (RI);
+  else CFG_LINE (DSR);
+  else {
+    l->line = 0;
+    l->inverted = 0;
+  }
+  return 0;
+}
+
+static int
+parse_flags (char *s, int *flags) {
+  *flags = atoi (s);
+  return 0;
+}
+
+static int
+parse_assignment (char *s) {
+  char *eq = strchr (s, '=');
+  if (eq == NULL)
+    return -1;
+  *eq++ = '\0';
+
+#define CFG_VARIABLE(name) \
+  if (!strcasecmp (s, #name) && name == NULL) name = strdup (eq)
+
+  CFG_VARIABLE(upsport);
+  else CFG_VARIABLE(upstype);
+  else CFG_VARIABLE(upsstat);
+  else CFG_VARIABLE(rcpowerfail);
+
+  return 0;
+}
+
+static int
+parse_entry (char *s) {
+  char *c, *end;
+  struct upsdef r, *rp;
+
+#define FIND_START_END do { \
+  while (*s && isspace (*s)) s++;		\
+  if (*s == '\0')				\
+    return NULL;				\
+  for (c = s; *c && !isspace (*c); c++);	\
+  if (*c != '\0')				\
+    *c++ = '\0';				\
+} while (0)
+
+  FIND_START_END;
+  if (*s == '#')
+      return NULL;
+  if (parse_assignment (s) == 0) {
+    return 0;
+  }
+  r.tag = s;
+
+  s = c; FIND_START_END;
+  if (parse_line (s, &r.cablepower) != 0)
+    return -1;
+  s = c; FIND_START_END;
+  if (parse_line (s, &r.kill) != 0)
+    return -1;
+  s = c; FIND_START_END;
+  r.killtime = strtoul (s, &end, 10);
+  if (*end != '\0')
+    return -1;
+  s = c; FIND_START_END;
+  if (parse_line (s, &r.powerok) != 0)
+    return -1;
+  s = c; FIND_START_END;
+  if (parse_line (s, &r.battok) != 0)
+    return -1;
+  s = c; FIND_START_END;
+  if (parse_line (s, &r.cableok) != 0)
+    return -1;
+  s = c;
+  if (parse_flags (s, &r.flags) != 0)
+    return -1;
+  r.tag = strdup (r.tag);
+  if (r.tag == NULL)
+    return -1;
+  rp = malloc (sizeof r);
+  bzero (rp, sizeof *rp);
+  if (rp == NULL)
+    free (r.tag);
+  else
+    *rp = r;
+  rp->next = ups;
+  ups = rp;
+  return 0;
+}
+
+static void
+parse_config (char *fname) {
+  FILE *f = fopen (fname, "r");
+  if (f == NULL)
+    return;
+  while (!feof (f)) {
+    char buf[1024];
+    fgets (buf, sizeof buf, f);
+    parse_entry (buf);
+  }
+  fclose (f);
+}
