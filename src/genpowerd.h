@@ -93,6 +93,8 @@ struct {
  {"apc2-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,0}, {0,0}, 0},
 
 /* Marek's APC Back-UPS */
+/* 2001-04-16 Fiskars PowerServer 10 Morten Johansen <morten@datasys.org>:
+     same as apc-linux. */
  {"apc-linux",   {TIOCM_DTR,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,1}, {TIOCM_DSR,0}, {0,0}, 0},
 
 /* Brian's APC Back-UPS Pro */
