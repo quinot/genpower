@@ -1,0 +1,105 @@
+#! /bin/sh
+#
+# powerfail      This script is run when the UPS tells the system that the 
+#                power has gone.  Tell everybody and start the shutdown based
+#                on the failure type.  This script will also run when the 
+#                power comes up again.
+#
+# Version:	/etc/init.d/powerfail (v2.0)
+#
+# Authors:	Brian White <bcwhite@pobox.com>
+#		Peter S Galbraith <GalbraithP@dfo-mpo.gc.ca>
+#		Mitch Blevins <mblevin@debian.org>
+#
+
+
+
+failtime=+5	# shutdown delay from initial power failure
+btrytime=now	# shutdown delay from low-battery warning
+
+failmsg="LINE POWER FAILURE -- SWITCHED TO BATTERY BACKUP"
+btrymsg="BACKUP BATTERY LOW -- EMERGENCY SHUTDOWN"
+okaymsg="LINE POWER RESTORED -- RESUMING NORMAL OPERATION"
+
+sdnotify=15	# maximum time shutdown that sends notices
+
+
+
+# Set the path.
+PATH=/sbin:/etc:/bin:/usr/bin
+
+# Set location of file containing PID of running shutdowns
+spidpath=/var/run/shutdown.pid
+
+# Set location of UPS status
+upspath=/etc/ups-status
+
+
+
+# See what happened.
+case "$1" in
+
+
+    start)
+	# Called with a powerfail event, check to see if a shutdown is running
+	if [ -f $spidpath ]
+	then
+	    # Shutdown is running, kill it to process the new event
+	    shutdown -c >/dev/null 2>&1
+	fi
+
+	if [ "$failtime" != "now" ]; then
+	    if [ `echo $failtime | sed -e 's/[^0-9]//g'` -gt "$sdnotify" ]; then
+		echo "$failmsg" | wall
+	    fi
+	fi
+
+	shutdown -h $failtime "$failmsg" &
+	echo "fail" >$upspath
+	;;
+
+
+    now)
+	# Called with a powerfail event, check to see if a shutdown is running
+	if [ -f $spidpath ]
+	then
+	    # Shutdown is running, kill it to process the new event
+	    shutdown -c >/dev/null 2>&1
+	fi
+
+	# Power is going down _now_
+	shutdown -h $btrytime "$btrymsg" &
+	echo "now" >$upspath
+	;;
+
+
+    stop)
+	# Ok, power is good again. Say so on the console.
+	if [ -f $spidpath ]
+	then
+	    # Only cancel if shutdown is running (system boot will call this)
+	    shutdown -c "$okaymsg"
+	fi
+	rm -f $upspath
+       ;;
+
+
+    restart|force-reload)
+	# This is just here to avoid lintian errors
+	;;
+
+
+    *)
+	echo "Usage: /etc/init.d/powerfail {start|now|stop}"
+	echo " start: shutdown in $failtime minutes due to power failure"
+	echo " now:   shutdown NOW due to eminent UPS battery failure"
+	echo " stop:  cancel shutdown because power is back online"
+	echo " (note that this script is usually called only by 'init')"
+	exit 1
+	;;
+
+
+esac
+
+
+exit 0

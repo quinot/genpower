@@ -1,0 +1,50 @@
+#! /bin/sh -e
+#
+# postinst file for genpower
+
+
+init=/etc/init.d/genpower
+fail=/etc/init.d/powerfail
+stat=/etc/upsstatus
+
+if [ "$1" != "configure" ]; then exit 0; fi
+
+if [ -d /usr/doc -a ! -e /usr/doc/genpower -a -d /usr/share/doc/genpower ]; then
+	ln -sf ../share/doc/genpower /usr/doc/genpower
+fi
+
+
+#
+# We need to ensure that /etc/upsstatus exists and has the OK status.
+# Otherwise, if "/etc/init.d/powerfail start" is called, the system will
+# immediately shutdown! -- RAM, 06/10/1999
+#
+if test -f $stat; then
+    case `head -1 $stat` in
+    OK) ;;
+    *) echo "Warning: $stat exists and does not contain OK";;
+    esac
+else
+#   echo "Creating $stat with OK status"
+    echo "OK" >$stat
+    chmod 644 $stat
+fi
+
+echo "- Edit $init to set cable type, port, and to enable UPS monitor."
+echo "- Edit $fail to set shutdown delays for this system."
+echo "- Note that genpower will not work with the smart-signalling mode supported by"
+echo "  most UPS systems.  You will likely have to build a special cable to make use"
+echo "  of the UPS's dumb-signalling mode (if it has one).  Information on this can"
+echo "  can be found in the /usr/doc/genpower/cables directory.  If you have an APC,"
+echo "  unit you should be able to use the 'apc-pnp' cable type with the Windows-95"
+echo "  PNP (plug-n-play) cable that came with your UPS.  This cable should come"
+echo "  with all APC Backups Pro, Smart-Ups, and Matrix-Ups systems."
+
+update-rc.d genpower start 13 1 2 3 4 5 . >/dev/null
+if [ -d avoid-lintian-error ]; then
+    update-rc.d powerfail   start 13 1 2 3 4 5 . >/dev/null
+    update-rc.d ups-monitor start 13 1 2 3 4 5 . >/dev/null
+fi
+
+echo " "
+$init start

@@ -1,0 +1,32 @@
+#! /bin/sh
+#
+# halt		Execute the halt command.
+#
+# Version:      @(#)halt  2.75  19-May-1998  miquels@cistron.nl
+#
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+halt="halt -d -f -i -p"
+boot="reboot -d -f -i"
+
+upspath="/etc/ups-status"
+
+# check the status of the line power
+if [ -x /etc/init.d/ups-monitor ]; then
+
+    if [ -r $upspath ]; then
+
+	if /etc/init.d/ups-monitor poweroff; then
+	    echo "Line power failure -- halting..."
+	    $halt
+	else
+	    echo "Line power restored -- rebooting..."
+	    $boot
+	fi
+
+    fi
+
+fi
+
+echo "Halting..."
+$halt

@@ -1,0 +1,74 @@
+#! /bin/sh
+#
+# genpower	This script is used to start the UPS management daemon.	 When
+#		called with "poweroff", this script will attempt to shutdown
+#		the UPS in order to preserve the battery.  This should only
+#		be done when going to run-level 0 ("system halt").
+#
+# Version:	/etc/init.d/genpower
+#
+# Author:	Brian White <bcwhite@pobox.com>
+#
+
+genpowerd=/sbin/genpowerd
+genwrite=/sbin/genwrite
+genconf=/etc/genpowerd.conf
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+
+if [ ! -x $genpowerd ]; then
+    exit 0
+fi
+
+if ! grep -q '^ENABLED=true' $genconf; then
+    echo "/etc/init.d/genpower: UPS monitor daemon not enabled"
+    exit 0
+fi
+
+
+#function setdumbsignal {
+#    if [ "$1" = "apc-pnp" ]; then
+#	echo -n "(switch to dumb-signalling mode) "
+#	$genwrite -d $upsport "R"
+#    fi
+#}
+
+
+case "$1" in
+
+    start)
+	echo -n "Starting UPS monitor: genpowerd "
+	killall genpowerd >/dev/null 2>&1
+#	setdumbsignal $upstype
+	$genpowerd
+	echo "."
+	;;
+
+    stop)
+	echo -n "Stopping UPS monitor: genpowerd "
+	killall genpowerd >/dev/null 2>&1
+	echo "."
+	;;
+
+    restart|force-reload)
+	$0 stop
+	$0 start
+	;;
+
+    poweroff)
+	echo "Sending power-down signal to the UPS..."
+	sync; sync; sleep 2
+	$genpowerd -k >/dev/null 2>&1
+	exit $?
+	;;
+
+
+    *)
+	echo "Usage: /etc/init.d/genpower {start|stop|restart|force-reload|poweroff}"
+	exit 1
+	;;
+
+esac
+
+
+exit 0

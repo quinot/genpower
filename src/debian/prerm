@@ -1,0 +1,9 @@
+#! /bin/sh
+#
+# prerm file for genpower
+
+if [ \( "$1" = "upgrade" -o "$1" = "remove" \) -a -L /usr/doc/genpower ]; then
+    rm -f /usr/doc/genpower
+fi
+
+/etc/init.d/genpower stop

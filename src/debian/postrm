@@ -1,0 +1,13 @@
+#! /bin/sh
+#
+# postrm file for genpower
+
+if [ "$1" = "purge" ]
+then
+    update-rc.d genpower remove >/dev/null
+fi
+
+if [ -d avoid-lintian-error ]; then
+    update-rc.d powerfail   remove >/dev/null
+    update-rc.d ups-monitor remove >/dev/null
+fi

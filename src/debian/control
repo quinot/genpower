@@ -1,0 +1,30 @@
+Source: genpower
+Section: admin
+Priority: extra
+Maintainer: Brian White <bcwhite@pobox.com>
+Standards-Version: 3.1.1.1
+
+Package: genpower
+Architecture: any
+Depends: sysvinit (>=2.84), ${shlibs:Depends}
+Section: admin
+Provides: ups-monitor
+Conflicts: ups-monitor
+Description: Monitor UPS and handle line power failures
+ The express aim of the genpower package is to add additional functionally
+ and a simpler means of configuring UPS monitoring, in a full featured
+ suite that can be configured to work with most UPSs featuring an RS232
+ monitoring port.
+ .
+ Depending on the UPS, cable, and the manner in which the genpower
+ package is configured, the genpower package provides the following
+ features:
+ .
+  * Line power sensing
+  * Low battery detection
+  * Physical cable detection
+  * The ability to kill the UPS's inverter
+ .
+ The Debian package has an extra cable description called "apc-pnp"
+ that should support all of the above for the APC Back-UPS Pro, Smart-UPS,
+ and Matrix-UPS systems using the included Windows-95 Plug-and-Play cable!

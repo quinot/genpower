@@ -1,0 +1,80 @@
+#! /usr/bin/make -f
+#
+# To make the binary distribution package, the ``Debianized'' source package
+# and the context diff to the original package, type `./debian/rules dist'.
+# Make sure that `debian/rules' is executable before the final distribution
+# is made.
+#
+# Invoke each target with `./debian/rules <target>'.  All targets should be
+# invoked with the package root as the current directory.
+#
+# The `binary' target must be run as root, as it needs to install files with
+# specific ownerships.  The `diff' target assumes that you have the original
+# source package available, unpacked, in ../$(p)-$(v).orig.
+#
+
+
+package	:= genpower
+debdir  := debian/tmp
+
+
+build:
+# Builds the binary package.
+	make CFLAGS='-O2 -g -fomit-frame-pointer -DNEWINIT' all genwrite
+	touch stamp-build
+
+clean:
+# Undoes the effect of `debian/rules build'.
+	rm -f stamp-build
+	rm -rf ${debdir} debian/files debian/substvars
+	find . \( -name "*~" -o -name "#*" \) -exec rm -f {} \;
+	$(MAKE) clean
+
+
+# Makes a binary package.
+binary-indep:
+	@echo "No architecture-independant packages"
+
+binary-arch:
+	test -f stamp-build || make -f debian/rules build
+	rm -rf ${debdir}
+	:
+	mkdir -p ${debdir}/DEBIAN ${debdir}/usr/share/doc/$(package)
+	mkdir -p ${debdir}/sbin ${debdir}/usr/sbin ${debdir}/etc/init.d ${debdir}/usr/share/man/man8
+	:
+	$(MAKE) install BINDIR=${debdir}/sbin SCRIPTDIR=${debdir}/etc MANDIR=${debdir}/usr/share/man/man8 CONFDIR=${debdir}/etc
+	:
+	rm -f ${debdir}/etc/genpowerfail
+	sed -e '/RCPOWERFAIL/d;s/UPSTYPE=.*/UPSTYPE=apc-pnp/' <genpowerd.conf >${debdir}/etc/genpowerd.conf
+	install -m 755 debian/genpower.rc  ${debdir}/etc/init.d/genpower
+	install -m 755 debian/powerfail.rc ${debdir}/etc/init.d/powerfail
+	cd ${debdir}/etc/init.d; ln -s genpower ups-monitor
+	strip ${debdir}/sbin/* # ${debdir}/usr/sbin/*
+	cp gentest.8 ${debdir}/usr/share/man/man8/
+	cd ${debdir}/usr/share/man && gzip -9v */*;
+	cd ${debdir}/usr/share/man/man8; ln -s genpowerd.8.gz genpower.8.gz
+	:
+	cp Change.Log					${debdir}/usr/share/doc/$(package)/changelog
+	cp debian/changelog				${debdir}/usr/share/doc/$(package)/changelog.Debian
+	cp README						${debdir}/usr/share/doc/$(package)/README
+	cp genpower.docs				${debdir}/usr/share/doc/$(package)/
+	cd ${debdir}/usr/share/doc/$(package) && gzip -9v *
+	cp -a cables					${debdir}/usr/share/doc/$(package)/
+	cd ${debdir}/usr/share/doc/$(package)/cables && gzip -9v *
+	cp debian/copyright				${debdir}/usr/share/doc/$(package)
+#	cd ${debdir}/usr/share/doc/$(package) && ln -sf ../copyright/GPL copyright
+	:
+	install -m 644 debian/conffiles	${debdir}/DEBIAN
+	install -m 755 debian/postinst	${debdir}/DEBIAN
+	install -m 755 debian/prerm		${debdir}/DEBIAN
+	install -m 755 debian/postrm	${debdir}/DEBIAN
+	:
+	dpkg-shlibdeps ${debdir}/sbin/* # ${debdir}/usr/sbin/*
+	dpkg-gencontrol -is -ip
+	chown -R root.root	${debdir}
+	chmod -R go=rX		${debdir}
+	dpkg --build		${debdir}
+	dpkg-name -o -s ..	${debdir}.deb
+
+binary: binary-indep binary-arch
+	@echo "Binaries made"

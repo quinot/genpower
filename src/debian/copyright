@@ -1,0 +1,12 @@
+This is the latest release of the genpower (Generic Power Monitoring
+for UN*X) package.
+
+The code was originally written by Tom Webster <webster@kaiwan.com>,
+and was subsequently modified by:
+  Brian White <bcwhite@pobox.com>
+  Jhon H. Caicedo O. <jhcaiced@osso.org.co>
+  Thomas Quinot <thomas@cuivre.fr.eu.org>
+
+This package is copyrighted under the Gnu General Public License.  The
+full text of this license can be found under /usr/share/common-licenses/GPL
+on a Debian Linux system.
