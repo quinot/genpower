@@ -22,7 +22,8 @@ btrymsg="BACKUP BATTERY LOW -- EMERGENCY SHUTDOWN"
 okaymsg="LINE POWER RESTORED -- RESUMING NORMAL OPERATION"
 
 sdnotify=15	# maximum time shutdown that sends notices
-
+logprio="daemon.warn"	# facility.level for logger program
+program=`basename $0`
 
 
 # Set the path.
@@ -54,6 +55,7 @@ case "$1" in
 	    fi
 	fi
 
+	logger -i -p $logprio -t "$program" "$failmsg"
 	shutdown -h $failtime "$failmsg" &
 	echo "fail" >$upspath
 	;;
@@ -68,6 +70,7 @@ case "$1" in
 	fi
 
 	# Power is going down _now_
+	logger -i -p $logprio -t "$program" "$btrymsg"
 	shutdown -h $btrytime "$btrymsg" &
 	echo "now" >$upspath
 	;;
@@ -78,6 +81,7 @@ case "$1" in
 	if [ -f $spidpath ]
 	then
 	    # Only cancel if shutdown is running (system boot will call this)
+	    logger -i -p $logprio -t "$program" "$okaymsg"
 	    shutdown -c "$okaymsg"
 	fi
 	rm -f $upspath
