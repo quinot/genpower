@@ -86,7 +86,7 @@ static char    *rcpowerfail = RC_POWERFAIL;
 
 static char    *upstype = NULL;
 
-#if defined (__Linux__) && !defined (NEWINIT)
+#if defined (__linux__) && !defined (NEWINIT)
 /* Create a flag file for Miquel van Smoorenburg's SysV init. */
 #define PWRSTAT         "/etc/powerstatus"
 #endif
