@@ -40,7 +40,7 @@ case "$1" in
 	echo -n "Starting UPS monitor: genpowerd "
 	killall genpowerd >/dev/null 2>&1
 #	setdumbsignal $upstype
-	$genpowerd
+	$genpowerd -c $genconf
 	echo "."
 	;;
 
