@@ -51,12 +51,16 @@ SYSCTL_OPAQUE(_kern, OID_AUTO, ups_dev,
 SYSCTL_INT(_kern, OID_AUTO, ups_action,
    CTLFLAG_RW, &ups_action, 0, "Action to be performed on UPS at shutdown.");
 
-/* ups_action can be either BREAK or any valid argument for TIOCMBIS */
-#define BREAK 0
+/* ups_action can be either:
+   - NONE (no action);
+   - BREAK (send break);
+   - any valid argument for TIOCMBIS (set corresponding modem line) */
+#define NONE	(-1)
+#define BREAK	0
 
 /* If ups_action is or'd with CLEAR, the corresponding line is cleared
    (TIOCMBIC) instead of set (TIOCMBIS). */
-#define CLEAR 0x8000000
+#define CLEAR	0x8000000
 
 /*
  * Perform action at shutdown.
@@ -87,7 +91,7 @@ shutdown_ups (void *junk, int *howto)
 	struct cdevsw *dsw;
 	int error;
 
-	if (ups_action < 0 || ups_dev == NOUDEV)
+	if (ups_action == NONE || ups_dev == NOUDEV)
 		return;
 
 	dev = udev2dev (ups_dev, 0);
@@ -98,7 +102,7 @@ shutdown_ups (void *junk, int *howto)
 	if (dsw == NULL || dsw->d_ioctl == NULL)
 		return;
 
-	if (ups_action == 0) {
+	if (ups_action == BREAK) {
 		printf ("Sending break to UPS.\n");
 		error = (*dsw->d_ioctl) (dev, TIOCSBRK, NULL, 0, NULL);
 		DELAY(400000); /* 400 ms */
