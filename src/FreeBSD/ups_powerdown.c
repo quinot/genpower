@@ -51,7 +51,12 @@ SYSCTL_OPAQUE(_kern, OID_AUTO, ups_dev,
 SYSCTL_INT(_kern, OID_AUTO, ups_action,
    CTLFLAG_RW, &ups_action, 0, "Action to be performed on UPS at shutdown.");
 
+/* ups_action can be either BREAK or any valid argument for TIOCMBIS */
 #define BREAK 0
+
+/* If ups_action is or'd with CLEAR, the corresponding line is cleared
+   (TIOCMBIC) instead of set (TIOCMBIS). */
+#define CLEAR 0x8000000
 
 /*
  * Perform action at shutdown.
@@ -67,7 +72,7 @@ shutdown_ups0 (void *junk, int *howto)
 {
 	/* Called before halting, when the system is quiescent. */
 
-	if (howto & RB_HALT) {
+	if (*howto & RB_HALT) {
 		/* This is a clean halt (no panic): kill UPS now. */
 		shutdown_ups (junk, howto);
 	}
@@ -93,16 +98,18 @@ shutdown_ups (void *junk, int *howto)
 	if (dsw == NULL || dsw->d_ioctl == NULL)
 		return;
 
-	switch (ups_action) {
-		case 0:
-			/* Send break */
-			printf ("Sending break to UPS.");
-			error = (*dsw->d_ioctl) (dev, TIOCSBRK, NULL, 0, NULL);
-			DELAY(400000); /* 400 ms */
-			error = (*dsw->d_ioctl) (dev, TIOCCBRK, NULL, 0, NULL);
-			break;
-		default:
-			return;
+	if (ups_action == 0) {
+		printf ("Sending break to UPS.\n");
+		error = (*dsw->d_ioctl) (dev, TIOCSBRK, NULL, 0, NULL);
+		DELAY(400000); /* 400 ms */
+		error = (*dsw->d_ioctl) (dev, TIOCCBRK, NULL, 0, NULL);
+	} else {
+		int line = ups_action & ~CLEAR;
+		int op = ((ups_action & CLEAR) != 0) ?
+			TIOCMBIC : TIOCMBIS;
+		printf ("%s UPS line %0x.\n", (op == TIOCMBIC) ?
+			"Clearing": "Setting", line);
+		error = (*dsw->d_ioctl) (dev, op, (void*) &line, 0, NULL);
 	}
 }
 
