@@ -227,7 +227,7 @@ main(int argc, char **argv)
 
     parse_config(config_file);
 
-    if (upsport == NULL || upstype == NULL) {
+    if (upsport == NULL || upstype == NULL || upsstat == NULL) {
 	usage(self);
     }
     for (pups = ups; pups; pups = pups->next) {
@@ -335,8 +335,8 @@ main(int argc, char **argv)
     openlog(self, LOG_CONS, LOG_DAEMON);
 
     /* Create an info file for powerfail scripts. */
-    unlink(UPSSTAT);
-    if ((stat_fd = open(UPSSTAT, O_CREAT | O_WRONLY, 0644)) >= 0) {
+    unlink(upsstat);
+    if ((stat_fd = open(upsstat, O_CREAT | O_WRONLY, 0644)) >= 0) {
 	write(stat_fd, "OK\n", 3);
 	close(stat_fd);
     }
@@ -663,7 +663,7 @@ parse_assignment(char *s)
     *eq++ = '\0';
 
 #define CFG_VARIABLE(name) \
-  if (!strcasecmp (s, #name) && name == NULL) name = strdup (eq)
+  if (!strcasecmp (s, #name)) name = strdup (eq)
 
     CFG_VARIABLE(upsport);
     else
