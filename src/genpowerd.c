@@ -685,7 +685,7 @@ parse_entry(char *s)
 #define FIND_START_END do { \
   while (*s && isspace (*s)) s++;		\
   if (*s == '\0')				\
-    return NULL;				\
+    return 0;					\
   for (c = s; *c && !isspace (*c); c++);	\
   if (*c != '\0')				\
     *c++ = '\0';				\
@@ -693,7 +693,7 @@ parse_entry(char *s)
 
     FIND_START_END;
     if (*s == '#')
-	return NULL;
+	return 0;
     if (parse_assignment(s) == 0) {
 	return 0;
     }
