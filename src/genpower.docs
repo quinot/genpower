@@ -1,9 +1,8 @@
 GENPOWER
-[Generic UPS Monitoring For Linux]
-By Tom Webster <webster@kaiwan.com>
-Version 1.0.1
-07/07/95
+[Generic UPS Monitoring For *nix]
+By Tom Webster <webster@kaiwan.com> & contributors.
 
+$Id$
 
 1.  Introduction
 1.1.  Copyright and Disclaimer
@@ -78,10 +77,17 @@ system.
 1.1.  Copyright and Disclaimer
 
 The program genpowerd, a utility to monitor UPS status and allow 
-the Linux operating system to act upon changes in said UPS 
-status, and supporting documents and files, are Copyright (C) 
-1995 by Tom Webster <webster@kaiwan.com>, unless expressly stated 
-therein.
+a *nix operating system to act upon changes in said UPS status,
+and supporting documents and files, are Copyright (C) 1995-2001
+by Tom Webster <webster@kaiwan.com>, unless explicitly stated herein.
+
+Contributions by:
+
+   Jhon H. Caicedo <jhcaiced@osso.org.co>
+   Thomas Quinot <thomas@cuivre.fr.eu.org>
+   Briand White <bcwhite@pobox.com>
+
+are owned and copyrighted by their respective authors.
 
 This program is free software; you can redistribute it and/or 
 modify it under the terms of the GNU General Public License as 
@@ -141,10 +147,10 @@ package possible:
    Danny ter Haar <danny@caution.cistron.nl.mugnet.org>, for 
       posting a diagram of Miquel van Smoorenburg's cable.
 
-The members of the Linux community who have shared their thoughts 
-   on UPS support with me.  I may not have adopted all of your 
-   ideas, or I may not have gotten to them all yet, but I have 
-   been listening.  Including but not limited to:
+The members of the free software community who have shared their
+   thoughts on UPS support with me.  I may not have adopted all
+   of your ideas, or I may not have gotten to them all yet, but
+   I have been listening.  Including but not limited to:
 
    Brian Kramer <bjkramer@pluto.njcc.com>
    Tim Moloney <moloney@lds.loral.com>
@@ -163,6 +169,15 @@ And special thanks to the following folks for being brave enough
    Kenny Wickstrom <kenny@kennet.com>
    Benjamin Wildasin <ben@ice-nine.student.harvard.edu>
 
+Genpower is currently maintained by:
+
+   Jhon H. Caicedo <jhcaiced@osso.org.co>
+   Thomas Quinot <thomas@cuivre.fr.eu.org>
+   Briand White <bcwhite@pobox.com>
+
+If you would like to contribute to the project, please visit:
+
+   http://sourceforge.net/projects/genpower/
 
 1.3.  Why Use a UPS (and genpowerd)?
 
@@ -182,9 +197,9 @@ warned that they need to save their data and log off.  The system
 can also be shutdown cleanly without intervention by the system 
 administrator.
 
-If you use Linux as a single-user system and never leave it 
-running while unsupervised, you can probably do without having 
-the system monitor the UPS.  But then again, why not let the 
+If you use a *nix operating system in single-user mode and never
+leave it running while unsupervised, you can probably do without
+having the system monitor the UPS.  But then again, why not let the 
 genpower package do some of the work for you?
 
 Depending on the UPS, cable, and the manner in which the genpower 
@@ -216,13 +231,12 @@ following features:
 
 In order to use the genpower package, you will need:
 
-A Linux system (the genpower package has been tested on kernels 
-from .99.9 to 1.2.8).
+A *nix system.
 
-An installed copy of Miquel van Smoorenburg's System V Init 
-package.  The genpower package was written and tested with 
-version 2.4 of the package, and installation instructions are 
-based on a version 2.4 setup but genpower should be fully 
+Optionnally, an installed copy of Miquel van Smoorenburg's
+System V Init package.  The genpower package was written and
+tested with version 2.4 of the package, and installation instructions
+are based on a version 2.4 setup but genpower should be fully 
 compatible with version 2.5.  The System V Init package should be 
 available for anonymous ftp as SysVInit-2.5.tgz on 
 sunsite.unc.edu in the /Linux/System/daemons directory.
@@ -322,11 +336,11 @@ connection to the system.
 A custom cable is generally needed to perform this task. UPS 
 vendors are more than willing to sell you these custom cables for 
 a price.  If you sometimes use another operating system on your 
-Linux box, you may want to consider getting the UPS vendor's 
+*nix box, you may want to consider getting the UPS vendor's 
 solution for that operating system and configuring the genpower 
 package to work with the cable for your other operating system.
 
-If you always run Linux, or don't care about automated UPS 
+If you always run *nix, or don't care about automated UPS 
 support in other environments, or just prefer to build your own 
 cables then refer to Section 2.1.2.1 for information on building 
 custom cables.
@@ -1087,6 +1101,11 @@ anonymous ftp as SysVInit-2.5.tgz on sunsite.unc.edu in the
 /Linux/System/daemons directory.  Install per the directions 
 provided with that software.
 
+You can also compile genpowerd without System V Init support,
+in which case you will have to define CPP variable 'RC_POWERFAIL'
+to be the full name of an executable that will be run whenever
+a power event occurs. The state of the UPS can then be retrieved
+from the path specified in UPSSTAT, usually /var/run/upsstatus.
 
 2.2.2.  The genpower Software
 
