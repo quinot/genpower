@@ -20,7 +20,7 @@ debdir  := debian/tmp
 
 build:
 # Builds the binary package.
-	make CFLAGS='-O2 -g -fomit-frame-pointer -DNEWINIT' all genwrite
+	make CFLAGS='-O2 -g -fomit-frame-pointer -DNEWINIT' all
 	touch stamp-build
 
 clean:
@@ -58,9 +58,9 @@ binary-arch:
 	cp debian/changelog				${debdir}/usr/share/doc/$(package)/changelog.Debian
 	cp README						${debdir}/usr/share/doc/$(package)/README
 	cp genpower.docs				${debdir}/usr/share/doc/$(package)/
-	cd ${debdir}/usr/share/doc/$(package) && gzip -9v *
 	cp -a cables					${debdir}/usr/share/doc/$(package)/
-	cd ${debdir}/usr/share/doc/$(package)/cables && gzip -9v *
+	find ${debdir}/ -name CVS | xargs -r rm -rf
+	find ${debdir}/usr/share/doc/$(package) -type f | xargs -r gzip -9v
 	cp debian/copyright				${debdir}/usr/share/doc/$(package)
 #	cd ${debdir}/usr/share/doc/$(package) && ln -sf ../copyright/GPL copyright
 	:

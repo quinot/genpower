@@ -9,10 +9,6 @@ stat=/etc/upsstatus
 
 if [ "$1" != "configure" ]; then exit 0; fi
 
-if [ -d /usr/doc -a ! -e /usr/doc/genpower -a -d /usr/share/doc/genpower ]; then
-	ln -sf ../share/doc/genpower /usr/doc/genpower
-fi
-
 
 #
 # We need to ensure that /etc/upsstatus exists and has the OK status.
