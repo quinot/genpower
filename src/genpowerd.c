@@ -11,7 +11,7 @@
 /* Purpose              : Monitor the serial port connected to a UPS.   */
 /*                      : Functions performed depend on the values in   */
 /*                      : the genpowerd.h file and command line         */
-/*			: configuration.  As a minimum, the power       */
+/*                      : configuration.  As a minimum, the power       */
 /*                      : status will be monitored.  Low battery        */
 /*                      : sensing and physical cable conection checks   */
 /*                      : are also supported.                           */
@@ -24,9 +24,9 @@
 /*                      : support shutting the inverter down), will     */
 /*                      : shut the inverter down (killing power to      */
 /*                      : the system while in powerfail mode).  If      */
-/*			: not configured to shutdown the inverter, or   */
-/*			: if unable to, genpowerd will return a         */
-/*			: non-zero exit code.                           */
+/*                      : not configured to shutdown the inverter, or   */
+/*                      : if unable to, genpowerd will return a         */
+/*                      : non-zero exit code.                           */
 /*                                                                      */
 /* Usage                : genpowerd [-k] <serial device> <ups-type>     */
 /*                      : i.e. genpowerd /dev/cua4 tripp-nt             */
@@ -132,7 +132,7 @@ str_neg(int s)
 }
 
 /* make a table of all supported UPS types */
-void 
+void
 list_ups()
 {
     int             maxlen = 0, len;
@@ -312,6 +312,10 @@ main(int argc, char **argv)
     setlevel(ups_fd, pups->cablepower.line, !pups->cablepower.inverted);
 
     /* Daemonize. */
+#ifdef DEBUG
+    closelog();
+    setsid();
+#else
     switch (fork()) {
       case 0:			/* Child */
 	closelog();
@@ -324,7 +328,8 @@ main(int argc, char **argv)
       default:			/* Parent */
 	closelog();
 	exit(0);
-    }				/* switch(fork()) */
+    }
+#endif				/* switch(fork()) */
 
     /* Restart syslog. */
     openlog(self, LOG_CONS, LOG_DAEMON);
@@ -455,7 +460,7 @@ main(int argc, char **argv)
 int
 getlevel(LINE * l, int flags)
 {
-    return (!l->line) || (((l->line & flags) != 0) ^ l->inverted);
+    return (l->line == 0) || (((l->line & flags) != 0) ^ l->inverted);
 }
 
 /************************************************************************/
@@ -571,10 +576,11 @@ powerfail(int failure_mode)
     /* Open the fifo (with timeout) */
     signal(SIGALRM, alrm_handler);
     alarm(3);
-    if ((fd = open(INIT_FIFO, O_WRONLY)) >= 0
-	&& write(fd, &req, sizeof(req)) == sizeof(req)) {
+    if ((fd = open(INIT_FIFO, O_WRONLY)) >= 0) {
+	if (write(fd, &req, sizeof(req)) != sizeof(req)) {
+	    syslog(LOG_ERR, "cannot signal init via %s: %s", INIT_FIFO, sys_errlist[errno]);
+	}
 	close(fd);
-	return;
     } else {
 	syslog(LOG_ERR, "cannot signal init via %s: %s", INIT_FIFO, sys_errlist[errno]);
     }
@@ -748,3 +754,9 @@ parse_config(char *fname)
     }
     fclose(f);
 }
+
+/*
+ * local variables:
+ * tab-width: 8
+ * end
+ */
