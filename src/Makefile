@@ -6,12 +6,14 @@
 NAME=		genpower-1.0.1
 BINDIR=		/sbin
 SCRIPTDIR=	/etc
+CONFDIR=	/etc
 MANDIR=		/usr/man/man8
 OWNER=		root
 GROUP=		root
 
 CC= cc
 CFLAGS=		-Wall -O2 -pipe
+INSTALL=	install
 
 # Linux:
 #CFLAGS+=	-DNEWINIT
@@ -38,20 +40,15 @@ clean:
 
 install:	binstall manstall
 
-binstall:	genpowerd 
-		cp -f genpowerd genwrite ${BINDIR}
-		cd ${BINDIR}; \
-		chmod 755 genpowerd; \
-		chgrp ${GROUP} genpowerd; \
-		chown ${OWNER} genpowerd
-		cp -f genpowerfail ${SCRIPTDIR}
-		cd ${SCRIPTDIR}; \
-		chmod 755 genpowerfail; \
-		chgrp ${GROUP} genpowerfail; \
-		chown ${OWNER} genpowerfail
+binstall:	genpowerd
+		-test -x genpowerd && ${INSTALL} -m755 -o${OWNER} -g${GROUP} -s genpowerd ${BINDIR}
+		-test -x genwrite  && ${INSTALL} -m755 -o${OWNER} -g${GROUP} -s genwrite  ${BINDIR}
+		-test -x gentest   && ${INSTALL} -m755 -o${OWNER} -g${GROUP} -s gentest   ${BINDIR}
+		${INSTALL} -m755 -o${OWNER} -g${GROUP} genpowerfail   ${SCRIPTDIR}
+		${INSTALL} -m644 -o${OWNER} -g${GROUP} genpowerd.conf ${CONFDIR}
 
-manstall:	
-		cp -f genpowerd.8 ${MANDIR}
+manstall:
+		${INSTALL} -m644 -o${OWNER} -g${GROUP} genpowerd.8 ${MANDIR}
 
 clobber:	clean
 		cd ${BINDIR}; \
