@@ -1,22 +1,3 @@
-/*
- File        : genpowerd.h
- Project     : genpower-1.0.2
-               Observatorio Sismologico del SurOccidente O.S.S.O
- Author(s)   : Jhon H. Caicedo O. <jhcaiced@osso.org.co>
- Description : Header file for genpowerd
-
- History     :
- 1.0.2
- ------
- Feb/05/2001   Added the definition for Tripplite Omnismart 450 PNP
-               with a 73-0724 cable, it works using Tx line for 
-               Inverter Shutdown, CTS for detecting PowerFail,
-               CAR (CD) for Low Battery Alarm and a GND Line (jhcaiced)
-               Added the field "id" to the UPS definitions, this makes
-               easy to run specific commands based on UPS model.
- Feb/05/2001   Modified from version 1.0.1, to add more UPSs (jhcaiced)
- ------------------------------------------------------------------------
-*/
 /************************************************************************/
 /* File Name            : genpowerd.h                                   */
 /* Program Name         : genpowerd                   Version: 1.0.1    */
@@ -92,6 +73,19 @@ struct {
 /* TrippLite WinNT */
  {"tripp-nt",    {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,1}, {0,0}, 0},
 
+/* 2001-02-05 Tripplite Omnismart 450 PNP
+   Jhon H. Caicedo <jhcaiced@osso.org.co> O.S.S.O */
+ {"omnismart-pnp", {TIOCM_RTS,1}, {TIOCM_RTS,1},  5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, UPS_TXD_KILL_INVERTER},
+
+/* Adrian's TrippLite OmniSmart 675 PNP */
+ {"tripp-omni",  {TIOCM_RTS,1}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
+ {"tripp-omini", {TIOCM_RTS,1}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
+ /* second entry (with a typo) retained for backward compatibility. */
+
+/* TrippLite PNP with furnished cable */
+/* TrippLite BC Pro w/73-0724 cable   */
+ {"tripp-pnp",  {TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
+
 /* Lam's APC Back-UPS, Victron Lite WinNT */
  {"apc1-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
 
@@ -101,27 +95,18 @@ struct {
 /* Marek's APC Back-UPS */
  {"apc-linux",   {TIOCM_DTR,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,1}, {TIOCM_DSR,0}, {0,0}, 0},
 
-/* 2001-02-05 Tripplite Omnismart 450 PNP
-   Jhon H. Caicedo <jhcaiced@osso.org.co> O.S.S.O */
- {"omnismart-pnp",  {TIOCM_RTS,1}, {TIOCM_RTS,1},  5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, UPS_TXD_KILL_INVERTER},
-
-/* 2001-12-24 OneUPS+
-   Thomas Quinot <thomas@cuivre.fr.eu.org> */
- {"oneups",   {0,0}, {TIOCM_ST,1},  5, {TIOCM_CTS,1}, {TIOCM_CAR,0}, {TIOCM_CAR,0}, 0},
-
-/* Adrian's TrippLite OmniSmart PNP 675 */
- {"tripp-omni", {TIOCM_RTS,1}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
- {"tripp-omini", {TIOCM_RTS,1}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
- /* second entry (with a typo) retained for backward compatibility. */
-
 /* Brian's APC Back-UPS Pro */
  {"apc-advanced",{TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_CAR,0}, {TIOCM_RNG,0}, {TIOCM_DSR,0}, 0},
 
 /* Chris Hansen's APC Back-UPS Pro PNP, APC cable #940-0095A */
- {"apc-pnp",    {TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_RNG,1}, {TIOCM_CAR,1}, {TIOCM_DSR,0}, 0},
+ {"apc-pnp",     {TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_RNG,1}, {TIOCM_CAR,1}, {TIOCM_DSR,0}, 0},
 
-/* TrippLite PNP with furnished cable */
- {"tripp-pnp",  {TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
+/* APC Back-UPS w/940-0020B cable */
+ {"apc-20b",     {TIOCM_RTS,0}, {TIOCM_DTR,1},  5, {TIOCM_CTS,1}, {TIOCM_CAR,1}, {0,0}, 0},
+
+/* 2001-12-24 OneUPS+
+   Thomas Quinot <thomas@cuivre.fr.eu.org> */
+ {"oneups",      {0,0}, {TIOCM_ST,1},  5, {TIOCM_CTS,1}, {TIOCM_CAR,0}, {TIOCM_CAR,0}, 0},
 
 /* Blackout Buster UPS, standard cable */
  {"blackout-buster",{TIOCM_DTR,0},{TIOCM_ST,1}, 0, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {TIOCM_DSR,0}, 0},
@@ -131,6 +116,9 @@ struct {
 
 /* Trust Energy Protector 400/650, as found in the UPS HOWTO */
  {"trust-energy",{TIOCM_DTR,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,0}, {TIOCM_CTS,0}, {TIOCM_DSR,0}, 0},
+
+/* CyberPower SL w/stock cable */
+ {"cyber-sl",   {TIOCM_RTS,0}, {TIOCM_DTR,1}, 75, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
 
  {NULL}
 };
