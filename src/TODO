@@ -1,0 +1,93 @@
+Things To Do
+
+   * Try to make the documentation a little more coherent.  
+I'm 
+     still trying to figure out how to do this without going 
+to a 
+     formatted document (i.e. PostScript, TeX, HTML).
+
+   * Add more information for UPSs other than TrippLite and 
+APC.
+
+   * Fix bugs, I'm sure there is just one last bug left....
+
+   * I'm thinking of splitting the source tree for unipower 
+into 
+     two parts.  I seem to run into two distinct groups who 
+want 
+     to use UPSs with Linux.  The first are those who use 
+Linux 
+     like any other desktop OS and feel the UPS monitoring 
+would 
+     be a nice addition to their system.  The second group are 
+     people or organizations using Linux as a server and need 
+to 
+     be able to keep it up 24 hours a day.  These two groups 
+have 
+     different goals and different requirements.
+
+     The non-server users (lite) are looking for an easily 
+     configured package that will let them know when the power 
+is 
+     out and will shut the system down when the power gets too 
+     low.  All other types of problems should just be logged.
+
+     The key word for the 'heavy' package would be paranoia.  
+The 
+     idea would be that the system would have to figure out 
+how 
+     much time it had available, and would only run off of 
+     battery power for some pre-configured amount of that 
+time.  
+     In the case of other problems, the 'heavy' package would 
+     generally log the problem and shut the system down.  The 
+     protection of data would be the first concern.  Needless 
+to 
+     say the setup would be much more complex on the 'heavy' 
+     package.
+
+   * Add network support for multiple Linux boxes on the same 
+     UPS.  There are several methods I've toyed with for doing 
+     this.
+
+     The simple method would be to setup a service (via inet) 
+     that just writes to contents of the /etc/upsstatus file 
+to 
+     the port when it gets a connection.  Then a daemon 
+process 
+     on the clients connects to the port every few seconds to 
+     check the status.  I am a little concerned that this 
+would 
+     start to cause problems if the number of clients was 
+greater 
+     than one or two.  The alternative simple method would be 
+to 
+     have the clients listen to a port, and have the server 
+     connect to a list of clients if the UPS's status changes.  
+     The client would be responsible for acting on the change 
+in 
+     status and getting itself shutdown before the server 
+shuts 
+     the inverter on the UPS off.
+
+     The complex method involves the clients connecting to the 
+     server and broadcasting an ID, and then getting the 
+status 
+     of the UPS.  The server would then maintain a list of 
+     clients that were being served.  The server would make 
+sure 
+     that all of the clients on its list had either 
+acknowledged 
+     messages or had timed out before it reacted to changes in 
+     the power status.  This system could quickly turn into a 
+     major project.
+
+
+I'm looking for thoughts and suggestions from the Linux 
+community on the last two items.  Please remember that I'm 
+doing this on my own time, so new features will be added only 
+as time permits.
+
+Tom Webster
+webster@kaiwan.com
+07/07/1995

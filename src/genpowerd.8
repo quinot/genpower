@@ -1,0 +1,62 @@
+.\"genpowerd release 1.0.0  4/95
+.TH UNIPOWERD 8
+.SH NAME
+genpowerd \- UPS monitor daemon
+.SH SYNOPSIS
+.B /sbin/genpowerd
+[
+.B \-k
+] tty ups-type
+.SH DESCRIPTION
+.I Genpowerd
+monitors the serial port connected to an UPS device
+and will perform an unattended shutdown of the system
+if the UPS is on battery longer than a specified
+number of minutes.
+.I Genpowerd
+needs to watch a tty with modem control properties,
+and [wiring details to be added.]  Please refer to the 
+.I genpowerd
+documentation for further information.
+.SH ARGUMENTS
+.TP
+.I Serial-Device
+Some serial port that is not being used by some other device, and does not
+share an interrupt with any other serial port.
+.TP
+.I UPS-Type
+A text string identifying the UPS and cable combination that genpowerd is
+to monitor.  If genpowerd is envoked without any arguments, a list of
+available configurations will be displaied.
+.SH OPTIONS
+.I genpowerd
+has the following command line options:
+.TP
+.I "-k"
+Causes
+.I genpowerd
+to send the signal to kill the UPS's inverter.  This signal is 
+configured at compile time in the
+.I genpowerd.h
+header file, and selected by the UPS/cable configuration selected
+at runtime.
+.PP
+.SH ENVIRONMENT VARIABLES
+Unipowerd does not use environment variables.
+.SH FILES
+/etc/powerstatus		indicates line power status
+.br
+/etc/upsstatus			indicates UPS battery status
+.br
+/etc/genpowerfail		script to manage power failures
+.SH BUGS
+Well, not a real bug but 
+.I genpowerd 
+should be able to do a broadcast or
+something on the ethernet in case more Linux-boxes are connected to
+the same UPS and only one of them is connected to the UPS status line.
+.SH SEE ALSO
+shutdown(8), wall(1), init(8), inttab(5).
+.SH AUTHOR
+Tom Webster <webster@kaiwan.com>
+(with parts of this man page pirated from all over the Linux community)

@@ -1,0 +1,1965 @@
+GENPOWER
+[Generic UPS Monitoring For Linux]
+By Tom Webster <webster@kaiwan.com>
+Version 1.0.1
+07/07/95
+
+
+1.  Introduction
+1.1.  Copyright and Disclaimer
+1.2.  Credits
+1.3.  Why Use a UPS (and genpowerd)?
+1.4.  What You Need?
+1.5.  How Does It Work?
+1.5.1.  The Parts
+1.5.1.1.  UPSs
+1.5.1.2.  Cables
+1.5.1.3.  genpowerd
+1.5.1.4.  init
+1.5.1.5.  genpowerfail
+1.5.1.6.  rc.0
+1.5.2.  All Together
+1.5.2.1.  Power Failure
+1.5.2.2.  Power Restored
+1.5.2.3.  Low Battery
+2.  Installation
+2.1.  Hardware
+2.1.1.  UPSs
+2.1.2.  Serial Port
+2.1.3.  Cables
+2.1.3.1.  Custom Cables
+2.1.3.1.1.  Miquel's powerd Cable
+2.1.3.1.2.  Classic TrippLite Cable
+2.1.3.1.3.  LAN Manager TrippLite Cable
+2.1.3.1.4.  Jim's APC Back-UPS/Smart-UPS Windows NT Cable
+2.1.3.1.5.  Lam's APC Back-UPS/Smart-UPS Windows NT Cable
+2.1.3.1.6.  Marek's APC Back-UPS/Smart-UPS Linux Cable
+2.1.3.1.7.  Erwin's Victron Lite Windows NT Cable
+2.2.  Software
+2.2.1.  System V Init
+2.2.2.  The genpower Software
+2.2.2.1.  Preconfigured genpowerd.h Configurations
+2.2.2.2.  The gentest Program
+2.2.2.3.  Editing genpowerd.h
+2.2.2.3.1.  Name
+2.2.2.3.2.  Cable Power
+2.2.2.3.3.  Inverter Kill
+2.2.2.3.4.  Kill Time
+2.2.2.3.5.  Power Monitor
+2.2.2.3.6.  Battery Monitor
+2.2.2.3.7.  Cable Monitor
+2.2.2.4.  genpowerfail
+2.2.3.  The inittab
+2.2.4.  The rc Files
+2.2.4.1.  rc.local
+2.2.4.2.  rc.0
+3.  Testing
+3.1.  Bench Testing
+3.2.  Hot Testing
+
+
+1.  Introduction
+
+The genpower package is a hack of Miquel van Smoorenburg's powerd 
+daemon, which is distributed in the SysVInit package.  The 
+express aim of genpower is to add additional functionally and a 
+simpler means of configuring a powerd-like daemon.
+
+The genpower daemon, genpowerd, will monitor the status of a 
+serial line connected to a UPS (Uninterruptible Power Supply).  
+If the status of the serial line changes, genpowerd will notify 
+the system to take the needed steps to react to the condition of 
+the UPS.  These actions include initiating and halting system 
+shutdowns based on the status of line power (power from your 
+power company) and of the UPS providing backup power to your 
+system.
+
+
+1.1.  Copyright and Disclaimer
+
+The program genpowerd, a utility to monitor UPS status and allow 
+the Linux operating system to act upon changes in said UPS 
+status, and supporting documents and files, are Copyright (C) 
+1995 by Tom Webster <webster@kaiwan.com>, unless expressly stated 
+therein.
+
+This program is free software; you can redistribute it and/or 
+modify it under the terms of the GNU General Public License as 
+published by the Free Software Foundation; either version 2 of 
+the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, 
+but WITHOUT ANY WARRANTY; without even the implied warranty of 
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License 
+along with this program; if not, write to the Free Software 
+Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+LAN Manager and Windows NT are trademarks of Microsoft 
+Corporation.  LANtastic is a trademark of ArtSoft Corporation.  
+They are used in an editorial fashion only.  No such uses are 
+intended to convey endorsement or other affiliation with the 
+genpower package.
+
+
+1.2.  Credits
+
+Thanks to the many people who have helped make the genpower 
+package possible:
+
+   Linus Torvalds <Linus.Torvalds@Helsinki.FI>, for creating 
+      Linux.
+
+   Miquel van Smoorenburg <miguels@cistron.nl.mugnet.org>, for 
+      writing the SysVInit package and powerd.
+
+   Harvey J Stein <hjstein@math.huji.ac.il>, for his thoughts on 
+      how UPS support should be done, and a copy of his Power 
+      Micro-Mini-HOWTO to look to when trying to explain how 
+      things should work.
+
+   Erwin Authried <erwin@ws1.atv.tuwien.ac.at>, for gutting the 
+      unipowerd code to make it better and enabling command line 
+      configuration.  He is a better 'C' programmer than I.
+
+   Marek Michalkiewicz <marekm@i17linuxa.ists.pwr.wroc.pl>, for 
+      many good changes, both to the documentation and the code.
+
+   Larry TeSelle <leteselle@e-world.com>, for being my resident 
+      electrical engineer and looking interested when I rambled 
+      on about this project.
+
+   Sherry Morgan <lilith99@aol.com>, for proofing this document 
+      and telling me that it was "better than I expected."
+
+   Lam Dang <dangit@netcom.com>, for providing the Linux APC 
+      cable, which I also used as a basis to build the LAN 
+      Manager TrippLite cable.
+
+   Danny ter Haar <danny@caution.cistron.nl.mugnet.org>, for 
+      posting a diagram of Miquel van Smoorenburg's cable.
+
+The members of the Linux community who have shared their thoughts 
+   on UPS support with me.  I may not have adopted all of your 
+   ideas, or I may not have gotten to them all yet, but I have 
+   been listening.  Including but not limited to:
+
+   Brian Kramer <bjkramer@pluto.njcc.com>
+   Tim Moloney <moloney@lds.loral.com>
+   Michael O'Reilly <Michael.OReilly@iinet.com.au>
+   Chris Origer <ctoriger@starbase.neosoft.com>
+   Mihkel Tammepuu <mihkel@teleport.ee>
+
+And special thanks to the following folks for being brave enough 
+   to beta test this package and providing me with much needed 
+   feedback:
+
+   Jeff Garnett <jgarnett@gate.net>
+   Jim Ockers <ockers@umr.edu>
+   Michael O'Reilly <Michael.OReilly@iinet.com.au>
+   Corey Sweeney <corey@interaccess.com>
+   Kenny Wickstrom <kenny@kennet.com>
+   Benjamin Wildasin <ben@ice-nine.student.harvard.edu>
+
+
+1.3.  Why Use a UPS (and genpowerd)?
+
+Nobody likes to lose data.  Power failures dump the data stored 
+in RAM, this is a pain on single-user / single-tasking systems, 
+but grows into more of a problem on multi-user / multi-tasking 
+systems like Linux.  Perhaps more importantly, UNIX style 
+(cached) file systems do not react well to losing power 
+unexpectedly.  Data tends to get lost and partitions thrashed 
+when major disk operations are interrupted unexpectedly.
+
+A UPS buys the system time for the users to save their data and 
+to shutdown the system cleanly in the event of a power failure.  
+When the UPS is monitored by the system, users who would not 
+otherwise be aware of the failure (i.e. remote users) can be 
+warned that they need to save their data and log off.  The system 
+can also be shutdown cleanly without intervention by the system 
+administrator.
+
+If you use Linux as a single-user system and never leave it 
+running while unsupervised, you can probably do without having 
+the system monitor the UPS.  But then again, why not let the 
+genpower package do some of the work for you?
+
+Depending on the UPS, cable, and the manner in which the genpower 
+package is configured, the genpower package provides the 
+following features:
+
+ * Line power sensing, to detect when the power has failed and 
+   initiate a delayed shutdown, or other appropriate actions.  
+   This facility also allows the system to cancel the shutdown if 
+   power is restored before the system is shutdown.
+
+ * Low battery detection, to detect when the UPS's battery is 
+   running low and initiate an immediate shutdown.
+
+ * Physical cable detection, to detect connection errors.
+
+ * The ability to kill the UPS's inverter.  This shuts the 
+   inverter on the UPS off, to prevent the system from draining 
+   the UPS's battery after it has shutdown.  This allows the 
+   system to restart itself, as if the power had been turned on 
+   when line power is restored. 
+
+   Additionally, this helps the UPS to retain enough power to 
+   deal with power yo-yos, where the power comes up and goes down 
+   several times before being fully restored.
+
+
+1.4.  What Do You Need?
+
+In order to use the genpower package, you will need:
+
+A Linux system (the genpower package has been tested on kernels 
+from .99.9 to 1.2.8).
+
+An installed copy of Miquel van Smoorenburg's System V Init 
+package.  The genpower package was written and tested with 
+version 2.4 of the package, and installation instructions are 
+based on a version 2.4 setup but genpower should be fully 
+compatible with version 2.5.  The System V Init package should be 
+available for anonymous ftp as SysVInit-2.5.tgz on 
+sunsite.unc.edu in the /Linux/System/daemons directory.
+
+A UPS with a serial monitoring port, and its documentation.
+
+A monitoring cable, either purchased from the UPS manufacturer, 
+or custom built (see section 2.1.2).  Generally, a straight 
+serial cable will not function properly as a monitoring cable.
+
+The genpower package and this documentation.
+
+
+1.5.  How Does It Work?
+
+To understand how the genpower package works, first the functions 
+of the individual parts needs to be understood, then how all of 
+the parts work in concert under different situations.
+
+
+1.5.1.  The Parts
+
+
+1.5.1.1.  UPSs
+
+A UPS is essentially a large battery and an inverter to convert 
+the direct current (DC) charge stored in the battery to 
+alternating current (AC).  When the line power connected to your 
+system fails, the UPS will provide power for your system to 
+continue operating for a limited time.  How long depends on the 
+capabilities of the UPS and the amount of power that your system 
+draws.
+
+UPSs are generally divided into two classes based on the type of 
+service they provide.  On-line UPSs are the more traditional of 
+the two.  On-line UPSs provide the system with power from the 
+battery at all times, the battery is recharging as the system 
+draws power from it, so it is always near its full charge.  This 
+system has the advantage of providing well regulated supply of 
+power (with no dips or spikes) to the system and power is 
+continuously provided to the system in the event of a power 
+failure.
+
+Line-interactive UPSs and backup/switching power supplies do not 
+provide the system with power from the battery at all times.  
+Instead, line power is filtered and passed on to the system.  If 
+line power goes out, the inverter is switched on and power is 
+provided from the battery.  Some line-interactive UPSs will use 
+battery power 'boost' line power to an acceptable range in the 
+event of a brown out.
+
+Early backup power supplies had large latencies when switching 
+from line power to battery power which could cause problems with 
+sensitive systems.  The current generation of backup power 
+supplies can perform the switch-over much faster and should not 
+cause any problems.  The advantage of backup power supplies is 
+that they are less expensive than their on-line counterparts.  
+The only disadvantage of modern backup power supplies is that, 
+while they generally provide surge suppression and noise 
+filtering, the power provided to the system is not as 'clean' as 
+that provided by an on-line UPS.
+
+Many UPSs today have a serial monitoring port.  This port allows 
+your system to monitor the status of line power and the UPS via a 
+customized serial cable and software.  UPSs with serial 
+monitoring ports come in two flavors, smart and dumb.
+
+Smart UPSs are able to provide a multitude of information to the 
+host system, including the voltage levels coming into the UPS, 
+the estimated time that the UPS can sustain your system at the 
+current rate of power consumption, and even the temperature of 
+the UPS.  Unfortunately, most smart UPSs utilize proprietary 
+protocols to transmit this information, limiting the availability 
+of the information to the monitoring software sold by the UPS 
+manufacturer.
+
+Dumb UPSs on the other hand, provide only a few pieces of 
+information by changing the state of lines in the serial 
+connection.  The information provided by dumb UPSs is usually 
+limited to the status of line power (on or off) and a warning 
+when the UPSs battery power is beginning to run low.  The 
+genpower package is designed to work with dumb UPSs or smart UPSs 
+emulating dumb ones (most will).
+
+
+1.5.1.2.  Cables
+
+The monitoring cable acts as a translator between the system and 
+the UPS.  The translation is needed because, while the port on 
+the UPSs are generally billed as a serial (RS-232) connection, 
+the only thing they tend to have in common with what most users 
+expect is common voltage levels and a similar number of pins.  As 
+a result, the monitoring cable needs to reroute the signal lines 
+in such a fashion as to make it look like a normal serial 
+connection to the system.
+
+A custom cable is generally needed to perform this task. UPS 
+vendors are more than willing to sell you these custom cables for 
+a price.  If you sometimes use another operating system on your 
+Linux box, you may want to consider getting the UPS vendor's 
+solution for that operating system and configuring the genpower 
+package to work with the cable for your other operating system.
+
+If you always run Linux, or don't care about automated UPS 
+support in other environments, or just prefer to build your own 
+cables then refer to Section 2.1.2.1 for information on building 
+custom cables.
+
+
+1.5.1.3.  genpowerd
+
+The genpowerd daemon has several jobs.  When executed with just a 
+serial device and a UPS/cable configuration as arguments, it will 
+monitor the status of the serial port.  The genpowerd daemon's 
+behavior is determined at run time by the UPS/cable configuration 
+specified on the command line.  This configuration defines which 
+lines are to be held high to provide power to the cable, which 
+lines are to be watched for status indicators, and what values 
+(high or low) are to be watched for.
+
+If the line for monitoring line power status changes state to 
+failure mode (power outage), genpowerd writes the string "FAIL" 
+in /etc/powerstatus and /etc/upsstatus for use by init and the 
+genpowerfail script respectively.  Then genpowerd will send init 
+a SIGPWR signal to let the system know that the power status has 
+changed.
+
+If the line for monitoring line power status changes state to 
+normal mode (the power is back on), genpowerd writes the string 
+"OK" in /etc/powerstatus and /etc/upsstatus for use by init and 
+the genpowerfail script respectively.  Then genpowerd will send 
+init a SIGPWR signal to let the system know that the power status 
+has changed.
+
+If the UPS's batteries begin to run low, the UPS will change the 
+state of the line for monitoring battery status to failure mode.  
+genpowerd writes the string "FAIL" in /etc/powerstatus and the 
+string "SCRAM" /etc/upsstatus for use by init and the 
+genpowerfail script respectively.  Then genpowerd will send init 
+a SIGPWR signal to let the system know that the power status has 
+changed.  The reason for the difference in strings is init only 
+knows about power failures and restorations of power, low battery 
+situations are handled solely by the genpowerfail script.
+
+When genpowerd is executed with the "-k" option, in addition to a 
+serial device and UPS/cable configuration, genpowerd will send 
+the signal defined by the UPS/cable configuration to kill the 
+UPS's inverter (effectively shutting the UPS off until line power 
+is restored).
+
+
+1.5.1.4.  init
+
+The init process has many jobs on UNIX systems, but its job with 
+respect to UPS monitoring is simple.  When init receives a SIGPWR 
+signal, it looks at the file /etc/powerstatus.  If 
+/etc/powerstatus contains the string "FAIL", init runs the 
+"pf::powerfail:..." line in the inittab.  This line should invoke 
+the genpowerfail script with the "start" command line argument.  
+If /etc/powerstatus contains the string "OK", init runs the 
+"pg::powerokwait:..." line in the inittab.  This line should 
+invoke the genpowerfail script with the "stop" command line 
+argument.
+
+
+1.5.1.5.  genpowerfail
+
+genpowerfail is a simple script designed to be run from the 
+inittab.  When invoked with the "start" command line argument, 
+genpowerfail looks at the file /etc/upsstatus.  If /etc/upsstatus 
+contains the string "SCRAM" (low battery), the genpowerfail 
+script will initiate an immediate system shutdown.  If 
+/etc/upsstatus contains any other value, a system shutdown is 
+initiated in two minutes.
+
+If genpowerfail is invoked with the "stop" command line argument, 
+it will cancel any outstanding shutdown processes.
+
+The shutdown actions above represent the default behavior of the 
+genpowerfail script.  These behaviors can be changed by editing 
+the genpowerfail script.
+
+
+1.5.1.6.  rc.0
+
+On most Linux systems a script will be run immediately prior to 
+halting or rebooting the system in the course of a shutdown.  
+This takes care of killing user processes and unmounting file 
+systems.
+
+On systems using version 2.4 of the System V Init package, this 
+file will generally be named /etc/rc.d/rc.0.  On systems using 
+other versions of init, the names may be different (i.e. /etc/brc 
+was used by early versions of init).  The system administrator or 
+package developer who setup your systems software may have 
+configured it for another filename.
+
+Invoking genpowerd with the "-k" command line option as the last 
+action in this script will kill the UPS's inverter when it is in 
+powerfail mode.
+
+
+1.5.2.  All Together
+
+Now that the role of the individual parts has been explained in 
+some detail, lets look at how they function together in three 
+different scenarios: Power Fail, Power Restored, and Low Battery.
+
+
+1.5.2.1.  Power Failure
+
+ (1) UPS: 
+     When Line power fails, the UPS provides power for the system 
+     and signals that the power has failed by changing the state 
+     of a line in the serial connection.
+
+ (2) genpowerd: 
+     The change in the serial connection is detected. The string 
+     "FAIL" is written to /etc/powerstatus and /etc/upsstatus.  
+     The SIGPWR signal is sent to init.
+
+ (3) init: 
+     The SIGPWR signal is received, and the contents of 
+     /etc/powerstatus are reviewed to determine the nature of the 
+     event.  The init process notes that the event is a power 
+     failure.  The "pf::powerfail:..." line in /etc/inittab is 
+     run by init.  This line invokes the genpowerfail script with 
+     the "start" command line argument.
+
+ (4) genpowerfail: 
+     The script knows that there has been a power failure because 
+     it was invoked with the "start" argument, but looks at the 
+     contents of /etc/upsstatus to determine the type of power 
+     failure.  Since /etc/upsstatus contains the string "FAIL" 
+     rather than "SCRAM", a delayed shutdown is initiated.
+
+ (5) rc.0:  
+     The rc.0 script is run by shutdown immediately prior to 
+     halting or rebooting the system.  The script kills all user 
+     processes, unmounts the disks, and calls genpowerd with the 
+     "-k" option.
+
+ (6) genpowerd: 
+     Invoked with the "-k" option, genpowerd kills the inverter, 
+     shutting off power to the system.  When line power returns, 
+     the UPS should reset itself.
+
+
+1.5.2.2.  Power Restored
+
+[Steps 1-4 of the Power Failure Scenario (1.5.2.1) are assumed
+to have already occurred.]
+
+ (5) UPS: 
+     When Line power is restored, the UPS signals that the power 
+     has been restored by changing the state of a line in the 
+     serial connection.
+
+ (6) genpowerd: 
+     The change in the serial connection is detected.  The string 
+     "OK" is written to /etc/powerstatus and /etc/upsstatus.  The 
+     SIGPWR signal is sent to init.
+
+ (7) init: 
+     The SIGPWR signal is received, and the contents of 
+     /etc/powerstatus are reviewed to determine that power has 
+     been restored.  The "pg::powerokwait:..." line in 
+     /etc/inittab is run by init.  This line invokes the 
+     genpowerfail script with the "stop" command line argument.
+
+ (8) genpowerfail: 
+     The script knows that power has been a restored because it 
+     was invoked with the "stop" argument and issues a "shutdown 
+     -c" to halt any pending shutdowns.
+
+
+1.5.2.3.  Low Battery
+
+[Steps 1-4 of the Power Failure Scenario (1.5.2.1) are assumed
+to have already occurred.]
+
+ (5) UPS: 
+     When the UPS determines that its battery is running low, it 
+     signals this by changing the state of a line in the serial 
+     connection.
+
+ (6) genpowerd: 
+     The change in the serial connection is detected.  The string 
+     "FAIL" is written to /etc/powerstatus and the string "SCRAM" 
+     is written to /etc/upsstatus.  The SIGPWR signal is sent to 
+     init.
+
+ (7) init: 
+     The SIGPWR signal is received, and the contents of 
+     /etc/powerstatus are reviewed to determine that the event is 
+     a power failure.  The "pf::powerfail:..." line in 
+     /etc/inittab is run by init.  This line invokes the 
+     genpowerfail script with the "start" command line argument.
+
+ (8) genpowerfail: 
+     The script knows that there has been a power failure because 
+     it was invoked with the "start" argument, but looks at the 
+     contents of /etc/upsstatus to determine what type of power 
+     failure.  Since, /etc/upsstatus contains the string "SCRAM", 
+     an immediate shutdown is initiated.
+
+ (9) rc.0:  
+     The rc.0 script is run by shutdown immediately prior to 
+     halting or rebooting the system.  The script kills all user 
+     processes, unmounts the disks, and calls genpowerd with the 
+     "-k" option.
+
+(10) genpowerd: 
+     Invoked with the "-k" option, genpowerd kills the inverter, 
+     shutting power off to the system.  When line power returns, 
+     the UPS should reset itself.
+
+
+2.  Installation
+
+This section is devoted to the assembly, configuration, 
+compilation, and installation of the hardware and software needed 
+to make the genpowerd suite work with your system.
+
+The final setup of your system takes place during the testing 
+phase of installation (Section 3).  Please do not skip ahead.
+
+As always, have your system backed up and a boot disk on hand.  
+You shouldn't need either for this installation, but editing 
+system configuration files is an inherently dangerous task.
+
+
+2.1.  Hardware
+
+We will tackle hardware setup first.  Getting the UPS and the 
+monitoring cable ready to interface with the genpower software.
+
+
+2.1.1.  UPSs
+
+Uncrate and setup the UPS in an environment matching your UPS's 
+documentation.  Be cautious of where you locate your UPS if it 
+has a front panel or non-recessed "OFF" switch.  Many people have 
+lost hours of work because they put the UPS in a place where the 
+"OFF" switch could be accidentally tripped.
+
+Prior to plugging in the UPS, you may want to use a plug tester 
+on the electrical outlet you are planning to use to make sure you 
+do not have problems with the line power (i.e. no ground or 
+chronically low voltage).  Some UPSs provide status LEDs that 
+will show such conditions, but many do not.
+
+Plug the UPS in and allow it to charge for 24 hours, or the 
+manufacturer's recommended charging time, whichever is longer.
+
+DO NOT PLUG ANYTHING INTO THE UPS'S ELECTRICAL OUTLETS UNTIL 
+DIRECTED.
+
+
+2.1.2.  Serial Port
+
+In order to use the genpower package, you must have an available 
+serial port.  This serial port should not be running getty or any 
+other communications software.  The permissions on the serial 
+port should also be changed to mode 600, to prevent malicious 
+users from killing the power.  (Slackware and other distributions 
+ship with the permissions set to 666.)
+
+You may want to make a pseudo-device for your UPS, which will be 
+a symbolic link to the actual serial device.  To create the 
+symbolic link, issue the following command as the root user 
+(insert the correct serial device for your UPS):
+
+     ln -s /dev/cua4 /dev/UPS
+
+Now you can simply refer to /dev/UPS in your scripts.
+
+The genpower package has been tested on a variety of serial 
+hardware, including smart and dumb multi-port serial boards.  The 
+genpower package is not very taxing on serial hardware, so any 
+type of UART should be able to support its needs.  The serial 
+device does not even need to have an IRQ assigned to it, the 
+polling mode of the serial driver works fine for genpower's 
+needs.  To setup a serial device without a controlling IRQ, issue 
+the following command from your rc.serial script (insert the 
+correct serial device for your UPS):
+
+     setserial /dev/UPS irq 0
+
+This may help if your system is configured DOS style, with 
+/dev/cua0 and /dev/cua2 sharing IRQ4 and /dev/cua1 and /dev/cua4 
+sharing IRQ3.  The other port can then use the IRQ for serial 
+communications without genpower getting in the way.  (Polling 
+mode may not work for all types of serial hardware.)
+
+
+2.1.3.  Cables
+
+Attach your UPS monitoring cable to your UPS and the serial port 
+you plan to monitor.
+
+UPS monitoring cables fall into two classes, commercial and 
+custom.  If you run another operating system that you want 
+monitor your UPS, I'd recommend buying the cable for that 
+operating system from your UPS vendor.  This should give you a 
+cable which will provide UPS support in both operating systems 
+and is vendor approved.
+
+If you only run Linux or don't need support for UPS monitoring 
+under other operating systems; feel comfortable working with 
+electronics, and aren't squeamish -- then building a custom cable 
+might be for you.  However, the author STRONGLY advises that the 
+reader consider using commercially procured cables, unless the 
+reader is very comfortable in constructing their own cables.
+
+Details on building custom cables for a TrippLite BCxxx/LAN UPS 
+and an APC Back-UPS/Smart UPS are contained in the following 
+sections.  The TrippLite examples are provided because I own one 
+of their UPSs, and could test the cable designs. Jim Ockers 
+<ockers@umr.edu> and Lam Dang <dangit@netcom.com> provided the 
+information on the APC cables.  To find additional examples of 
+cable designs for other UPSs, please refer to Harvey J. Stein's 
+<hjstein@math.huji.ac.il> UPS HOWTO available on sunsite.unc.edu.
+
+
+2.1.3.1.  Custom Cables
+
+THERE IS NO WARRANTY FOR THE FOLLOWING CABLE DESIGNS TO THE 
+EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED 
+IN WRITING THE AUTHOR AND/OR OTHER PARTIES PROVIDE THE CABLE 
+DESIGNS "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR 
+IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE 
+RISK AS TO THE QUALITY AND PERFORMANCE OF THE CABLE DESIGNS IS 
+WITH YOU.  SHOULD THE CABLE DESIGNS PROVE DEFECTIVE, YOU ASSUME 
+THE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
+
+IN NO EVENT, UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN 
+WRITING, WILL THE AUTHOR BE LIABLE TO YOU FOR DAMAGES, INCLUDING 
+ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING 
+OUT OF THE USE OR INABILITY TO USE THE CABLE DESIGNS (INCLUDING 
+BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE 
+OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A FAILURE OF THE 
+CABLE DESIGNS TO OPERATE WITH ANY OTHER PROGRAMS), EVEN IF SUCH 
+HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH 
+DAMAGES.
+
+
+2.1.3.1.1. Miquel's powerd Cable
+
+Miquel van Smoorenburg's <miguels@cistron.nl.mugnet.org> cable 
+design is pretty simple and will function with genpower, 
+providing only basic power status sensing.  This drawing of the 
+cable diagram was culled from an USENET News posting by Danny ter 
+Haar <danny@caution.cistron.nl.mugnet.org>.
+
+----- Begin Diagram -----
+
+                             +-------------o  DSR
+                             |
+                  +----------+-------------o  DTR
+                  |
+                +---+
+                |   | resistor
+                |   | 10 kilo-Ohm
+                |   |
+                +---+                           To serial port.
+                  |
+    +-----o-------+------------------------o  DCD
+    |
+    o  UPS
+  \    relais
+   \
+    |
+    +-----o--------------------------------o  GND
+
+----- End Diagram -----
+
+These are the genpowerd.h parameters for this cable.  Please 
+refer to Section 2.2.2.3 for a description of these settings:
+
+Type:               "powerd"
+Cable Power:        {TIOCM_RTS,0}
+Inverter Kill:      {TIOCM_DTR,1}
+Inverter Kill Time: 0
+Power Check:        {TIOCM_CAR,0}
+Battery Check:      {0,0}
+Cable Check:        {TIOCM_DSR,0}
+
+
+2.1.3.1.2. Classic TrippLite Cable
+
+This is the cable I hand-built to work with powerd.  It provides 
+power status sensing and inverter shutdown.
+
+NOTE: The inverter shutdown provided via the serial transmit line 
+(TIOCM_ST).  genpowerd holds this line high by sending a BREAK 
+signal for the defined duration.  Due to the inflexibility of 
+this method, this serial line should only be used for killing the 
+inverter.
+
+----- Begin Diagram -----
+
+   9 pin to 25 pin  /-+--------+-\  25 pin to 9 pin cable
+   +-\_____________/  | Patch  |  \________/-+
+   |  _____________   | Panel  |   ________  |
+   +-/             \  |        |  /        \-+
+                    \-+--------+-/
+
+Here is what the interface cable should look like:
+
+   +---------------------------------------+-+--------------+
+   |  UPS Side                             | |  System Side |
+   +-----------------------------+----+----+-+----+----+----+
+   |                             | 9  | 25 | | 25 | 9  |    |
+   |Name                         |Pin |Pin | |Pin |Pin |Name|
+   +-----------------------------+----+----+-+----+----+----+
+   |                             | N/A| 01 | | 01 | N/A|FG  |
+   | Line fail open/inverter off | 03 | 02 | | 04 | 07 |RTS |
+   | Common Negative             | 01 | 08 | | 08 | 01 |DCD |
+   | Inverter shutdown/(+) Side  | 02 | 03 | | 02 | 03 |TD  |
+   | Inverter shutdown/(-) Side  | 04 | 20 | | 03 | 02 |RD  |
+   +-----------------------------+----+----+-+----+----+----+
+
+NOTE: The frame ground (FG) is not used on 9 pin serial cables 
+and was permanently attached on the break-out box I've been 
+using, so I included it -- I don't think it is functional.
+
+NOTE: There has been some discussion as to the need of resistors 
+in the inverter shutdown circuit.  In the several months I used 
+this cable, I never used resistors in the circuit.  If you are 
+concerned, you may want to place a resistor in the 10k-100k Ohm 
+range in the positive side of the inverter shutdown circuit.
+
+----- End Diagram -----
+
+These are the genpowerd.h parameters for this cable, please refer 
+to Section 2.2.2.3 for a description of these settings:
+
+Type:               "tripp-class"
+Cable Power:        {TIOCM_RTS,0}
+Inverter Kill:      {TIOCM_ST,1}
+Inverter Kill Time: 5
+Power Check:        {TIOCM_CAR,0}
+Battery Check:      {0,0}
+Cable Check:        {0,0}
+
+
+2.1.3.1.3. LAN Manager TrippLite Cable
+
+This cable should provide the same programming interface as LAN 
+Manager or Windows NT expects.  This design is adapted from a 
+USENET News posting by Lam Dang <dangit@netcom.com> for APC UPS 
+cables.  This cable should provide UPS power status, low battery 
+status, and inverter shutdown.
+
+----- Begin Diagram -----
+
+   UPS SIDE (9 Pin)                              SERIAL PORT SIDE
+
+   PIN 3    o-------------+------------------------o  DCD
+   [POWER FAIL]           |
+                        +---+
+                        |   | resistor
+                        |   | 10 kilo-Ohm
+                        |   |
+                        +---+
+                          |
+                          +------------------------o  RTS
+                          |
+                        +---+
+                        |   | resistor
+                        |   | 10 kilo-Ohm
+                        |   |
+                        +---+
+                          |
+   PIN 6    o-------------+------------------------o  CTS
+   [LOW BATTERY]
+
+   Pin 1    o--------------------------------------o  GND
+   [COMMON NEGATIVE/GND]
+
+                            +----------+ Resistor
+   PIN 2    o---------------+ 100k Ohm +-----------o  DTR
+   [INVERTER SHUTDOWN POS]  +----------+
+
+   PIN 4    o--------------------------------------o  RI
+   [INVERTER SHUTDOWN NEG]
+
+NOTE: There has been some discussion as to the need of resistors 
+in the inverter shutdown circuit. The inclusion of a resistor in 
+this design is in response to these concerns and was not present 
+in the original design.  The 100k Ohm resistor indicated above is 
+an estimate, you may want to place a resistor in the 10k-100k Ohm 
+range in the positive side of the inverter shutdown circuit.
+
+----- End Diagram -----
+
+These are the genpowerd.h file parameters for this cable, please 
+refer to section 2.2.2.3 for a description of these settings:
+
+Type:               "tripp-nt"
+Cable Power:        {TIOCM_RTS,0}
+Inverter Kill:      {TIOCM_DTR,1}
+Inverter Kill Time: 5
+Power Check:        {TIOCM_CTS,1}
+Battery Check:      {TIOCM_CAR,1}
+Cable Check:        {0,0}
+
+
+2.1.3.1.4.  Jim's APC Back-UPS/Smart-UPS Windows NT Cable
+
+Jim Ockers <ockers@umr.edu> provided this cable design.  An 
+alternative cable for APC UPSs is given by in section 2.1.3.1.5.
+
+This cable is the same cable that is used for the Windows NT and 
+LAN Manager interface to the APC Back-UPS and Smart-UPS.  This 
+cable should provide UPS power status, low battery status, and 
+inverter shutdown.  This cable has been tested extensively on
+an APC Back-UPS 400.  (I haven't been able to get the inverter
+shutdown to work under NT 3.5, but everything else works fine.)
+
+There is a 10K Ohm resistor connecting the RTS and the DCD lines
+on the PC side.  The Low Battery output from the UPS requires
+an external power supply; the RTS line from the PC's serial port
+provides that power.  Windows NT's UPS service keeps the RTS line
+high, and with the right configuration so does genpowerd. The 
+resistor is necessary to reduce the current flow.
+
+If you have a 9-pin connector for the computer side, use 
+the pinout for DB9 below.  If you have a 25-pin connector, use 
+the pinout for DB25 below (in parentheses).
+
+----- Begin Diagram -----
+
+          Serial Port side                      UPS side
+            pin, DB9 (DB25)                     pin, DB9
+   ShutDownUPS   4(20)<----------DTR--------------> 1
+   LineFail      8(5) <----------CTS--------------> 2
+   GND           5(7) <----------GND--------------> 4 (same as 9)
+   LowBattery    1(8) <----------DCD--------------> 5
+                 |
+                +-+ 10k
+                | | Ohm
+                +-+ Resistor
+                 |
+                 7(4) RTS (CABLEPOWER)
+
+----- End Diagram -----
+
+These are the genpowerd.h file parameters for this cable, please 
+refer to section 2.2.2.3 for a description of these settings:
+
+Type:               "apc2-nt"
+Cable Power:        {TIOCM_RTS,0}
+Inverter Kill:      {TIOCM_DTR,1}
+Inverter Kill Time: 5
+Power Check:        {TIOCM_CTS,1}
+Battery Check:      {TIOCM_CAR,0}
+Cable Check:        {0,0}
+
+
+2.1.3.1.5.  Lam's APC Back-UPS/Smart-UPS Windows NT Cable
+
+Jeff Garnett <jgarnett@gate.net> provided this cable design, 
+derived from Lam Dang's <dangit@netcom.com>.  An alternative 
+cable for APC UPSs is given by Jim Ockers <ockers@umr.edu> in 
+section 2.1.3.1.4.
+
+NOTE: This cable makes use of a +24V line provided by the APC 
+      UPS, this service has not been confirmed to exist on all 
+      models of APC UPSs.  Specifically, APC Back-UPS 400 series 
+      are known not to provide this service and should not use 
+      this cable.  Please use either the commercially available 
+      APC cables or Jim Ockers' LAN Manager cable (2.1.2.1.5) if 
+      this cable is incompatible with your UPS.
+
+----- Begin Diagram -----
+
+The cable is to run between a 9-pin female connector on the UPS 
+and a 25-pin male connector on the PC.  Since I cut off one end 
+of a 9-pin cable and replaced it with a 25-pin connector, I had 
+to be VERY CAREFUL ABOUT PIN NUMBERS.  The 25-pin hood is big 
+enough to contain a voltage regulator and two resistors.  I got 
+all the materials (listed below) from Radio Shack for less than 
+10 bucks.  As required by Windows NT Advanced Server 3.5 (Beta 
+2), the "interface" between the UPS connector and the PC 
+connector is as follows:
+
+        UPS (9-pin)           PC (25-pin)
+        1 (Shutdown)           20 (DTR)
+        3 (Line Fail)           5 (CTS)
+        4 (Common)              7 (GND)
+        5 (Low Battery)         8 (DCD)
+        9 (Chassis Ground)      1 (Chassis Ground)
+
+This is pretty straightforward.  You can use UPS pin 6 instead of 
+3 (they're the inverse of each other).  The complication is in 
+pulling up UPS open collector pins 3 (or 6) and 5.
+
+This APC model provides an unregulated output of 24 Vdc at UPS 
+pin 8. The output voltage is available all the time (at least 
+until some time after Low Battery has been signaled).  The supply 
+is limited to 40 mA.  To pull up, UPS pin 8 is input to a +5 Vdc 
+voltage regulator.  The output of the regulator goes into two 
+4.7K resistors.  The other end of one resistor connects both UPS 
+pin 3 (Line Fail) and PC pin 5 (CTS).  That of the other resistor 
+connects both UPS pin 5 (Low Battery) and PC pin 8 (DCD).  The 
+two resistors draw about 2 mA when closed.
+
+For those who want to run it with Windows NT Advanced Server, the 
+UPS interface voltages are NEGATIVE for both power failure (using 
+UPS pin 3) and low battery conditions, and POSITIVE for remote 
+shutdown.  Serial line parameters such as baud rate don't matter.
+
+List of materials:
+        1 shielded D-sub connector hood (Radio Shack 276-1510)
+        1 25-pin female D-sub crimp-type connector (276-1430)
+        1 7805 +5Vdc voltage regulator (276-1770)
+        2 4.7K resistors
+        1 component perfboard (276-148)
+        1 cable with at least one 9-pin male connector.
+
+----- End Diagram -----
+
+These are the genpowerd.h file parameters for this cable, please 
+refer to section 2.2.2.3 for a description of these settings:
+
+Type:               "apc1-nt"
+Cable Power:        {TIOCM_RTS,0}
+Inverter Kill:      {TIOCM_DTR,1}
+Inverter Kill Time: 5
+Power Check:        {TIOCM_CTS,0}
+Battery Check:      {TIOCM_CAR,0}
+Cable Check:        {0,0}
+
+
+2.1.3.1.6.  Marek's APC Back-UPS/Smart-UPS Linux Cable
+
+Marek Michalkiewicz <marekm@i17linuxb.ists.pwr.wroc.pl> has 
+provided a cable designed for use with Linux.  The inverter 
+shutdown is performed via the data transmit line (TIOCM_ST) and 
+the cable power is provided via DTR, rather than RTS.  These 
+control lines were selected to solve problems that some APC users 
+were having with NT style cables under Linux.  This cable has 
+been designed for and tested on an APC Back-UPS, it should also 
+work with APC Smart-UPSs using 'dumb' signaling.
+
+UNIX systems will pull RTS and DTR high when the port is opened, 
+genpowerd clears these lines as soon as it can, but some APC 
+users have reported problems with the inverter shutting down when 
+they boot while in powerfail mode.  The choice of DTR to power 
+the cable is a result of some reports of serial hardware dropping 
+RTS over time.  This phenomena is not well documented, but using 
+DTR seems to solve the problem for those users who experience 
+spontaneous dropout on RTS.
+
+----- Begin Diagram -----
+UPS side                                serial port side
+9 pin male                              9 (25) pin female
+
+1 o------------<-------------o 3 (2)   TX   (HIGH = kill power)
+
+2 o------------>-------------o 1 (8)   DCD  (HIGH = power fail)
+
+9 o--------------------------o 5 (7)   GND
+
+5 o------------>--------+----o 6 (6)   DSR  (LOW = low battery)
+                        |
+                      +---+
+                      |   | 6.8 kilo ohm
+                      |   | resistor
+                      |   | (4.7k-10k should work fine)
+                      +---+
+                        |
+                        +---o 4 (20)   DTR  (cable power)
+
+----- End Diagram -----
+
+These are the genpowerd.h file parameters for this cable, please 
+refer to section 2.2.2.3 for a description of these settings:
+
+Type:               "apc-linux"
+Cable Power:        {TIOCM_DTR,0}
+Inverter Kill:      {TIOCM_ST,1}
+Inverter Kill Time: 5
+Power Check:        {TIOCM_CAR,1}
+Battery Check:      {TIOCM_DSR,0}
+Cable Check:        {0,0}
+
+
+2.1.3.1.7.  Erwin's Victron Lite Windows NT Cable
+
+Erwin Authried <erwin@ws1.atv.tuwien.ac.at> has provided this 
+cable for Victron Lite UPSs, for use with Linux and Windows NT.  
+The genpower configuration for this cable is identical to Lam 
+Dang's APC cable for Windows NT ("apc1-nt").
+
+----- Begin Diagram -----
+   UPS SIDE (9 Pin)                              SERIAL PORT SIDE
+
+   PIN 9    o-------------+------------------------o  CTS
+   [Mains failure]        |
+                        +---+
+                        |   | resistor
+                        |   | 10 kilo-Ohm
+                        |   |
+                        +---+
+                          |
+                          +------------------------o  RTS
+                          |
+                        +---+
+                        |   | resistor
+                        |   | 10 kilo-Ohm
+                        |   |
+                        +---+
+                          |
+   PIN 7    o-------------+------------------------o  DCD
+   [Battery low]
+
+   Pin 5    o--------------------------------------o  GND
+   [Common]
+
+   PIN 1    o--------------------------------------o  DTR
+   [UPS shutdown]
+----- End Diagram -----
+
+These are the genpowerd.h file parameters for this cable, please 
+refer to section 2.2.2.3 for a description of these settings:
+
+Type:               "apc1-nt"
+Cable Power:        {TIOCM_RTS,0}
+Inverter Kill:      {TIOCM_DTR,1}
+Inverter Kill Time: 5
+Power Check:        {TIOCM_CTS,0}
+Battery Check:      {TIOCM_CAR,0}
+Cable Check:        {0,0}
+
+
+2.2.  Software
+
+The next step is to install and configure the needed software.  
+Once you begin to update the system software, do not reboot the 
+system until you are finished with all of the steps in this 
+section.  Incompletely installed and configured software can 
+leave your system in an unstable state.
+
+
+2.2.1.  System V Init
+
+This documentation assumes that Miquel van Smoorenburg's System V 
+Init package has been installed on your system.  This is an 
+option with most modern distributions of Linux.  The genpower 
+package was written and tested with version 2.4 of the package, 
+and installation instructions are based on a version 2.4 setup, 
+but genpower should be fully compatible with version 2.5.
+
+If you are not using the System V Init package, you will have to 
+install it in order for the genpower software to function 
+correctly.  The System V Init package should be available for 
+anonymous ftp as SysVInit-2.5.tgz on sunsite.unc.edu in the 
+/Linux/System/daemons directory.  Install per the directions 
+provided with that software.
+
+
+2.2.2.  The genpower Software
+
+Installing the genpower software consists of several simple but 
+necessary steps.  The genpowerd.h configuration file MUST support 
+your UPS/cable combination for genpowerd to function properly.
+
+Several preconfigured UPS/cable combinations have been provided 
+in the genpowerd.h file, details on these configurations are 
+contained in the next section.  If you need to add a new 
+configuration to genpowerd.h for your setup, you will have to 
+edit the genpowerd.h file.  Details on editing genpowerd.h are in 
+section 2.2.2.3.  You may want to use the gentest software 
+(section 2.2.2.2) to help you determine the settings for 
+genpowerd.h.  Remember to edit the genpowerfail script to fit 
+your needs.  
+
+After you have ensured that genpowerd.h supports your UPS/cable 
+combination, check the paths in the included Makefile and issue a 
+"make all" to compile the genpower software.  If there were no 
+errors reported, issue a "make install" as the root user, and the 
+genpower software will be copied to its appropriate locations.
+
+
+2.2.2.1.  Preconfigured genpowerd.h Configurations
+
+A number of preconfigured UPS/cable combinations have been 
+included in genpowerd.h.  If your UPS and cable match those 
+listed, you can simply specify the configuration name on the 
+command line.
+
+powerd
+   This configuration is for UPSs with cables designed to be 
+   compatible with Miquel van Smoorenburg's powerd daemon.
+
+   +-----------+------------+---------------+-------------------+
+   | Vendor    | UPS        | Cable         | Cable Part Number |
+   +-----------+------------+---------------+-------------------+
+   | Misc      | Misc       | Linux (powerd)| (See 2.1.3.1.1.)  |
+   +-----------+------------+---------------+-------------------+
+
+tripp-nt
+   This configuration is for TrippLite UPSs and cables compatible 
+   with Microsoft LAN Manager, Microsoft Windows NT, and 
+   Artsoft's LANtastic.
+
+   +-----------+------------+---------------+-------------------+
+   | Vendor    | UPS        | Cable         | Cable Part Number |
+   +-----------+------------+---------------+-------------------+
+   | TrippLite | BCxxx/LAN, | LAN Manager,  | 73-0665 (DB9)     |
+   |           | Omni,      | MS Win NT,    | 73-0664 (8pin DIN)|
+   |           | Unison     | LANtastic     |                   |
+   +-----------+------------+---------------+-------------------+
+   | TrippLite | BCxxx/LAN, | Linux         | (See 2.1.3.1.3.   |
+   |           | Omni,      |               |  for cable)       |
+   |           | Unison     |               |                   |
+   +-----------+------------+---------------+-------------------+
+
+tripp-class
+   This configuration is for TrippLite UPSs using my Classic 
+   TrippLite cable.
+
+   +-----------+------------+---------------+-------------------+
+   | Vendor    | UPS        | Cable         | Cable Part Number |
+   +-----------+------------+---------------+-------------------+
+   | TrippLite | BCxxx/LAN, | Linux         | (See 2.1.3.1.2.   |
+   |           | Omni,      |               |  for cable)       |
+   |           | Unison     |               |                   |
+   +-----------+------------+---------------+-------------------+
+
+apc1-nt
+   This configuration is for Lam Dang's APC cable 
+   that should be compatible with  Microsoft LAN Manager, 
+   Microsoft Windows NT, and Artsoft's LANtastic.
+
+   Erwin Authried's Victron Lite UPS cable that should be 
+   compatible with  Microsoft LAN Manager, Microsoft Windows NT, 
+   and Artsoft's LANtastic should also function with this 
+   configuration.
+
+   NOTE: Lam's cable makes use of a +24V line provided by the APC 
+         UPS, this service has not been confirmed to exist on all 
+         models of APC UPSs.  Specifically, APC Back-UPS 400 
+         series are known not to provide this service and should 
+         not use this cable.  Please use either the commercially 
+         available APC cables or Jim Ockers' LAN Manager cable 
+         (2.1.2.1.5) if this cable is incompatible with your UPS.
+
+   +-----------+------------+---------------+-------------------+
+   | Vendor    | UPS        | Cable         | Cable Part Number |
+   +-----------+------------+---------------+-------------------+
+   | APC       | Back-UPS,  |  Linux        | (See 2.1.3.1.5.   |
+   |           | Smart-UPS  |               |   for cable)      |
+   +-----------+------------+---------------+-------------------+
+   | Victron   | Lite       |  Linux        | (See 2.1.3.1.7.   |
+   |           |            |               |   for cable)      |
+   +-----------+------------+---------------+-------------------+
+
+apc2-nt
+   This configuration is for Jim Ockers' APC cable that should be 
+   compatible with Microsoft LAN Manager, Microsoft Windows NT, 
+   and Artsoft's LANtastic.
+
+   +-----------+------------+---------------+-------------------+
+   | Vendor    | UPS        | Cable         | Cable Part Number |
+   +-----------+------------+---------------+-------------------+
+   | APC       | Back-UPS,  | Linux         | (See 2.1.3.1.4.   |
+   |           | Smart-UPS  |               |   for cable)      |
+   +-----------+------------+---------------+-------------------+
+
+apc-linux
+   This configuration is for Marek Michalkiewicz's APC cable for 
+   Linux.  This cable is specifically designed to be used with 
+   genpower and should not be assumed to be compatible with any 
+   other UPS monitoring software.
+
+   +-----------+------------+---------------+-------------------+
+   | Vendor    | UPS        | Cable         | Cable Part Number |
+   +-----------+------------+---------------+-------------------+
+   | APC       | Back-UPS,  | Linux         | (See 2.1.3.1.6.   |
+   |           | Smart-UPS  |               |   for cable)      |
+   +-----------+------------+---------------+-------------------+
+
+
+2.2.2.2.  The gentest Program
+
+Configuring genpowerd by trial and error with an unfamiliar cable 
+and UPS can be frustrating.  The gentest program is provided to 
+ease the struggle of testing UPS and cable combinations.
+
+The gentest program takes parameters to determine if it should 
+set DTR or RTS (either, neither, or both can be set) and the 
+serial port you want to monitor.  The "-d" parameter sets the DTR 
+bit, while "-r" sets RTS.  The syntax looks like this:
+
+     gentest [-d -r] <serial port>
+          i.e.
+     genpower -r /dev/cua4
+
+The genpowerd will display the settings of the control lines for 
+the selected serial port.  An asterisk is displayed next to any 
+values that have changed.  For example, if you were to start 
+gentest with the command line:
+
+        genpower -r /dev/cua4
+
+while cua4 was connected to a LAN Manager cable and a TrippLite 
+BC750/LAN, gentest would display:
+
+     ---------------
+     DTR = Cleared
+     RTS = Set
+     
+     CAR = Low   ( )
+     CTS = Low   ( )
+     DSR = Low   ( )
+     RNG = Low   ( )
+
+If the line power to the UPS were shut off, gentest would update 
+the screen with:
+
+     ---------------
+     DTR = Cleared
+     RTS = Set
+     
+     CAR = Low   ( )
+     CTS = High  (*)
+     DSR = Low   ( )
+     RNG = Low   ( )
+
+indicating that the CTS line had changed status and that the new 
+status of the CTS line is HIGH.
+
+The gentest program is valuable in determining the parameters to 
+use in genpowerd.h with unfamiliar cables and UPSs.  In the 
+example above, it could be determined that RTS probably provides 
+power to the cable and that CTS is the line that shows changes in 
+the line power's status (with LOW being the normal status of the 
+line).
+
+To build gentest, simply issue a "make gentest" in the directory 
+containing the genpower package.
+
+NOTE: If you want to monitor how genpowerd is interacting with 
+the serial line, gentest is not the appropriate program.  The 
+gentest program was designed to alter line conditions to emulate 
+different genpowerd configurations.  If you want to 'snoop' on 
+what genpowerd is doing, I would recommend Jeff Tranter's 
+<Jeff_Tranter@Mitel.COM> statserial program.  Jeff's statserial 
+program was designed to display the status of serial control 
+lines without altering the condition of the serial lines.  The 
+URL for statserial is as follows: 
+
+	ftp://sunsite.unc.edu/pub/Linux/system/Serial/
+		statserial-1.0.tar.gz
+
+
+2.2.2.3.  Editing genpowerd.h
+
+The genpowerd.h header file controls the way in which the 
+genpowerd daemon communicates with the UPS.  This file MUST be 
+edited to match your systems requirements prior to compiling 
+genpowerd.
+
+The sections which define the configurations for different UPS 
+and cable combinations are part of a structure definition.  The 
+formatting of these entries is very specific and must be 
+maintained.  Additional configurations may be added prior to the 
+"{NULL}" entry in the structure.
+
+The configuration entry for Miquel's powerd cable will be used as 
+an example.  The two lines defining the configuration for 
+Miquel's powerd cable are (the second line is wrapped in this 
+document, but should be a single line in the configuration file:
+
+/* Miquel's powerd cable */
+{"powerd",{TIOCM_RTS,0},{TIOCM_DTR,1},0,{TIOCM_CAR,0},{0,0},
+	{TIOCM_DSR,0}},
+
+This entry can be divided up into seven sections, each of which 
+defines an aspect of the configuration:
+
+   1.  Name             "powerd"
+   2.  Cable Power      {TIOCM_RTS,0}
+   3.  Inverter Kill    {TIOCM_DTR,1}
+   4.  Kill Time        0
+   5.  Power Monitor    {TIOCM_CAR,0}
+   6.  Battery Monitor  {0,0}
+   7.  Cable Monitor    {TIOCM_DSR,0}
+
+If you are fortunate enough to have a UPS and cable that match 
+the provided configurations in the genpowerd.h, then you do not 
+have to edit the genpowerd.h file and can go on to compiling 
+genpowerd.  A list of the provided genpowerd configurations is in 
+section 2.2.2.1.
+
+2.2.2.3.1.  Name
+
+The name section of the configuration is a text string that 
+uniquely identifies the configuration.  This string is used to 
+select the configuration at run time.  The string should be 
+enclosed in single quotes contain no spaces or shell meta-
+characters and be composed of eleven (11) of fewer characters.
+
+
+2.2.2.3.2.  Cable Power
+
+This section defines which serial control line is set to power 
+the cable's monitoring functions.  If no lines need to be set 
+high to provide positive voltage for the cable, select an unused 
+control line.
+
+This section is composed of two pieces of information, separated 
+by a comma and enclosed in curly brackets.  The first piece of 
+information is a textual tag defining which control line will be 
+used to provide power.  Acceptable values for this tag are:
+
+     TIOCM_DTR       DTR - Data Terminal Ready
+     TIOCM_RTS       RTS - Ready to Send
+
+The second piece of information is an integer value, defining the 
+normal operating status of the control line.
+
+     0 = the output is set (pos. voltage).
+     1 = the output is cleared (neg. voltage).
+
+In our example, Miquel's cable is configured with the following 
+values in this section:
+
+     {TIOCM_RTS,0}
+
+This means that at startup, genpowerd will set the RTS control 
+line high to provide power for the cable monitoring functions.
+
+
+2.2.2.3.3.  Inverter Kill
+
+This section defines which serial control line is to be used to 
+kill the UPS's inverter after an orderly shutdown is performed.  
+If this function is not supported by your UPS/cable 
+configuration, an unused control line should still be defined for 
+this section.
+
+This section is composed of two pieces of information, separated 
+by a comma and enclosed in curly brackets.  The first piece of 
+information is a textual tag defining which control line will be 
+used to send the kill signal.  Acceptable values for this tag 
+are:
+
+     TIOCM_DTR       DTR - Data Terminal Ready
+     TIOCM_RTS       RTS - Ready to Send
+     TIOCM_ST        ST  - Data Transmit
+
+The second piece of information is an integer value, defining the 
+normal operating status of the control line.
+
+     0 = the output is set (pos. voltage).
+     1 = the output is cleared (neg. voltage).
+
+In our example, Miquel's cable is configured with the following 
+values in this section:
+
+     {TIOCM_DTR,1}
+
+This means that when genpowerd is started with the "-k" option, 
+genpowerd will set the DTR control line high to signal the UPS to 
+shutdown the inverter.  The line is held high for the duration 
+defined in the next section.
+
+
+2.2.2.3.4.  Kill Time
+
+This section defines how long the inverter kill signal, as 
+defined in the previous section, is to be sent.  Some UPSs 
+require that the signal is maintained for a minimum period of 
+time before they will act upon it.
+
+This section is composed of a single integer value that defines 
+how long, in seconds, the inverter kill signal is to be sent.  As 
+a default, five (5) seconds seems to work well for most UPSs.  If 
+the your UPS/cable combination does not support shutting down the 
+UPS's inverter, this value should be set to zero.
+
+In our example, Miquel's cable is configured with the following 
+value in this section:
+
+     0
+
+This means that Miquel's cable does not support the inverter kill 
+function (the signal will be held for 0 seconds).
+
+
+2.2.2.3.5.  Power Monitor
+
+This section defines which serial control line is to be used to 
+monitor the status of line power coming into the UPS.
+
+This section is composed of two pieces of information, separated 
+by a comma and enclosed in curly brackets.  The first piece of 
+information is a textual tag defining which control line will be 
+used to monitor the power.  Acceptable values for this tag are:
+
+     TIOCM_CTS       CTS - Clear To Send
+     TIOCM_CAR       DCD - Data Carrier Detect
+     TIOCM_RNG       RI  - Ring Indicator
+     TIOCM_DSR       DSR - Data Signal Ready
+
+The second piece of information is an integer value, defining the 
+normal operating status of the control line.
+
+     0 = the line is normally high (pos. voltage).
+     1 = the line is normally low (neg. voltage).
+
+In our example, Miquel's cable is configured with the following 
+values in this section:
+
+     {TIOCM_CAR,0}
+
+This means that while the UPS is running off of line power, the 
+carrier detect line (CD or CAR) is held high by the UPS.  Should 
+a power failure occur, this line will then drop low to signal the 
+change.
+
+
+2.2.2.3.6.  Battery Monitor
+
+This section defines which serial control line is to be used to 
+monitor the status of the UPS battery.  Some UPSs will send a 
+signal when the UPS battery has nearly been depleted.  The 
+genpowerd daemon can use this signal to initiate an emergency 
+shutdown.
+
+This section is composed of two pieces of information, separated 
+by a comma and enclosed in curly brackets.  The first piece of 
+information is a textual tag defining which control line will be 
+used to monitor the battery.  Acceptable values for this tag are:
+
+     TIOCM_CTS       CTS - Clear To Send
+     TIOCM_CAR       DCD - Data Carrier Detect
+     TIOCM_RNG       RI  - Ring Indicator
+     TIOCM_DSR       DSR - Data Signal Ready
+     0               N/A - Disabled
+
+The second piece of information is an integer value, defining the 
+normal operating status of the control line.
+
+     0 = the line is normally high (pos. voltage).
+     1 = the line is normally low (neg. voltage).
+
+In our example, Miquel's cable is configured with the following 
+values in this section:
+
+     {0,0}
+
+This means that Miquel's cable does not support low battery 
+signals.
+
+
+2.2.2.3.7.  Cable Monitor
+
+This section defines which serial control line is to be used to 
+monitor the status of the cable connection between the system and 
+the UPS.  On the surface this sounds good, but the hardware 
+implementation tends to be flawed.  Unless the UPS provides an 
+otherwise unused loopback along two pins in its interface, the 
+best you can do is check that one end of the cable is attached to 
+the system.  Most commercial cables do not seem to support this 
+feature, and it is provided only for compatibility with powerd.
+
+This section is composed of two pieces of information, separated 
+by a comma and enclosed in curly brackets.  The first piece of 
+information is a textual tag defining which control line will be 
+used to monitor the cable.  Acceptable values for this tag are:
+
+     TIOCM_CTS       CTS - Clear To Send
+     TIOCM_CAR       DCD - Data Carrier Detect
+     TIOCM_RNG       RI  - Ring Indicator
+     TIOCM_DSR       DSR - Data Signal Ready
+     0               N/A - Disabled
+
+The second piece of information is an integer value, defining the 
+normal operating status of the control line.
+
+     0 = the line is normally high (pos. voltage).
+     1 = the line is normally low (neg. voltage).
+
+In our example, Miquel's cable is configured with the following 
+values in this section:
+
+     {TIOCM_DSR,0}
+
+This means that the DSR control line is used to monitor the cable 
+connection.  In the case of Miquel's cable, the DSR line is tied 
+to the RTS line (which provides power to the cable's monitoring 
+functions).  In this case, the cable connection test only 
+verifies that the system end of the cable is connected to the 
+serial port.  This system will not detect a whether the cable is 
+connected to the UPS.
+
+NOTE: If cable monitoring is not enabled and genpowerd detects a 
+power failure on startup, a shutdown with a short delay (1 minute 
+by default) will be initiated.  This behavior was added because 
+incorrectly configured, or missing cables, can fool the system 
+into believing that it needs to shutdown immediately.  This can 
+lead to a system locked into a loop of constant reboots.  The 
+delayed shutdown should provide the system administrator with 
+sufficient time to abort the shutdown if a bad cable is the 
+culprit.
+
+
+2.2.2.4.  genpowerfail
+
+The genpowerfail script controls what actions are performed by 
+the system when power fails, power returns, and when the UPS's 
+battery begins to run low during a power failure.
+
+The sample genpowerfail script is configured to initiate a system 
+reboot after a two minute delay.  The choice of reboot over halt 
+was to prevent a theoretical problem where power could return 
+after all of the processes were killed (like genpowerd) and 
+before the signal to kill the inverter has been sent.  If 
+genpowerfail had initiated a halt, this could result in an 
+indefinitely halted system.
+
+In the event of power returning after a delayed shutdown has 
+begun, the default script is configured to issue a "shutdown -c" 
+to kill all pending shutdowns.
+
+If UPS battery power should begin to run low, genpowerfail is 
+configured to issue an immediate reboot, via the "shutdown -r 
+now" command.
+
+NOTE: If your UPS or monitoring cable does not support killing 
+the inverter, you will probably want to change the reboot 
+commands to halts.  This can be done by changing portions of the 
+script from "shutdown -r +2" to "shutdown -h +2" and "shutdown -r 
+now" to "shutdown -h now".  See the manual page for shutdown for 
+additional information.
+
+If these defaults are not what you want, or the paths to binary 
+files are not correct, edit this file to match your needs.
+
+NOTE: If you edit the genpowerfail script, make sure to test it 
+from the command line before integrating it into your system.  
+Syntax errors are not reported by init when it attempts to 
+execute a script.
+
+
+2.2.3.  The inittab
+
+Modify your inittab to call the powerfail script in the event of 
+a change in power status.  To do this add the following lines to 
+your /etc/inittab:
+
+     # What to do when power fails.
+     pf::powerfail:/etc/genpowerfail start
+
+     # If power is back, cancel the running shutdown.
+     pg::powerokwait:/etc/genpowerfail stop
+
+Similar lines may already exist in your inittab; if they do you 
+may simply edit them.  An additional line may exist to handle the 
+return of power while in single user mode.  The default genpower 
+setup handles all modes, so this line should be deleted or 
+commented out.
+
+When you have completed the changes to /etc/inittab, force init 
+to reread the altered inittab by issuing the following command as 
+the root user:
+
+    telinit q
+
+
+2.2.4.  The rc Files
+
+In order to have genpowerd started each time you boot Linux, and 
+to have genpowerd kill the inverter, you will need to edit your 
+startup and shutdown scripts.
+
+
+2.2.4.1.  rc.local
+
+Add a line, or two, to your rc.local file to start genpowerd when 
+you boot Linux.  The rc.local file will be located in either the 
+/etc or /etc/rc.d directory.  The syntax for genpowerd is:
+
+     genpowerd <line> <ups-type>
+
+where "<line>" is the serial device to be monitored and "<ups-
+type>" is the UPS/cable configuration.  Use the /dev/cua?? type 
+devices rather than the /dev/tty?? or /dev/ttyS?? serial devices.  
+The additions to your rc.local should look something like this:
+
+     # Add support for the UPS
+     echo "Starting genpowerd daemon..."
+     if [ -x /sbin/genpowerd ]; then
+        /sbin/genpowerd /dev/cua4 tripp-nt
+     fi
+
+NOTE: You may want to make a pseudo-device for your UPS, which 
+will be a symbolic link to the actual serial device.  To create 
+the symbolic link, issue the following command as the root user 
+(insert the correct serial device for your UPS):
+
+     ln -s /dev/cua4 /dev/UPS
+
+Now you can simply refer to /dev/UPS in your scripts.
+
+
+2.2.4.2.  rc.0
+
+The rc.0 script is the last thing executed by the system prior to 
+calling halt or reboot.  The script's functions include 
+unmounting disks and killing user processes.  This script my go 
+by other names depending on how your system was configured.  Mine 
+is /etc/rc.d/rc.0, and other alternatives include /etc/brc and 
+/etc/rc.d/rc.shutdown.
+
+Invoking genpowerd with the "-k" command line option as the last 
+action in this script will kill the UPS's inverter when it is in 
+powerfail mode.  This command should follow the "umount -a" 
+command which unmounts the disks.  The root disk is not actually 
+unmounted (it is made read-only) so the genpowerd command will 
+still be available to the system.  You may want to include a 
+sleep command (5-10 seconds) to ensure the disks have had time to 
+sync and unmount cleanly.
+
+The syntax to kill the inverter is as follows, where "<line>" is 
+the serial device to be monitored and "<ups-type>" is the 
+UPS/cable configuration:
+
+     genpowerd -k <line> <ups-type>
+
+My rc.0 file is included below.  A little bit of explanation is 
+probably in order to make its functioning apparent.
+
+My rc.0 script makes use of the fact that genpowerd will return a 
+non-zero exit code if it fails to kill the inverter for whatever 
+reason.  In this event, I've configured my system to halt itself 
+rather than continue with a reboot.  The problem is that calling 
+the halt command from within rc.0 results in rc.0 being called by 
+halt and potentially recursing infinitely.
+
+I take care of this problem with the $RECURSE shell variable.  
+The statement "RECURSE=${RECURSE-0}" will initialize $RECURSE to 
+a value of "0", if it hasn't been defined yet.  If $RECURSE has 
+been defined, its current value is retained.  This way I can find 
+out if this instance of rc.0 is being called recursively and 
+shield certain parts of the script from being run again.
+
+My rc.0 script also checks the contents of /etc/upsstatus to see 
+if genpowerd should be run with the "-k" option.  I like to add a 
+little 'sleep' time if I'm killing the inverter, just to be sure 
+everything has had time to sync.  This waiting period isn't 
+needed if the system isn't in powerfail, so I do the check before 
+running that block of commands.
+
+----- Begin Included File: /etc/rc.d/rc.0 -----
+#! /bin/sh
+#
+# rc.0    This file is executed by init(8) when the system
+#         is being shutdown (i.e. set to run at level 0).
+#         It usually takes care of un-mounting all unneeded
+#         file systems.
+#
+# Version:  /etc/rc.d/rc.0     2.20     7/7/95
+#
+# Authors:
+#     Tom Webster, <webster@kaiwan.com>
+#     Miquel van Smoorenburg, <miquels@drinkel.nl.mugnet.org>
+#     Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+#
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+
+# Some of these will display errors if genpowerd causes 
+#    a recurse, but better safe than sorry.
+echo Unmounting file systems.....
+sync
+if [ "`mount | grep ' on / ' | grep umsdos`" = "" ]
+then
+    umount -a
+else
+    # Let's not put ugly errors on the screen with UMSDOS.
+    umount -a 2> /dev/null 
+fi
+
+# Check to see if power needs to be killed.
+RECURSE=${RECURSE-0}
+if [ $RECURSE -eq 0 ]
+then
+    RECURSE=1
+    export RECURSE
+    if [ -r /etc/upsstatus ]
+    then
+        stats=`head -1 /etc/upsstatus`
+        # Kill power if needed
+        if [ $stats != "OK" ]
+        then
+            echo "Killing Power...."
+            sleep 5
+            if genpowerd -k /dev/cua4 tripp-nt
+            then
+                # The inverter should be off by now.  
+                # If we are still here, the power is back.
+                echo The power is back, rebooting....
+                echo
+            else
+                # Problem killing the power, halt
+                echo Error killing the inverter, halting....
+                /sbin/halt -q
+            fi
+        fi
+    fi
+fi
+echo Done.
+----- End Included File: /etc/rc.d/rc.0 -----
+
+NOTE: Make sure that all commands that you need to process a 
+recursed rc.0 are present on the mounted filesystems.  If you 
+have /usr on a separate filesystem, it may involve moving files 
+over to /bin or /sbin.
+
+
+3.  Testing
+
+Your software should now be setup and ready to be tested.  The 
+following sections will guide you through a test process designed 
+to test your UPS hardware and monitoring software.  As you 
+complete the testing cycle, you will also complete the hardware 
+installation.
+
+
+3.1.  Bench Testing
+
+The first step in the testing procedure is to make sure the UPS 
+hardware and software is functioning properly, before relying on 
+the UPS to provide power for your system.
+
+To do this:
+
+ (1) Plug the UPS into a power strip with an on/off switch for 
+     testing.  DO NOT simply pull the plug to simulate a power 
+     failure.  UPSs require grounding which a power strip (even 
+     in the off mode) should provide.  The power strip should be 
+     in the "ON" mode at this time and providing current to the 
+     UPS.
+
+ (2) Make sure that the UPS monitoring cable is attached 
+     properly.  (Section 2.1.2)
+
+ (3) Run genpowerd on the appropriate serial device.  If you have 
+     rebooted your system since editing your rc.local, genpowerd 
+     may already be running.  If not, type the following from the 
+     command line as the root user, where "<line>" is the serial 
+     device you have attached the monitoring cable to and 
+     "<ups-type>" is the UPS/cable configuration:
+
+          genpowerd <line> <ups-type>
+
+     For example the command would look like this on my system:
+
+          genpowerd /dev/cua4 tripp-nt
+
+ (4) Plug a lamp, or two if needed, into the UPS's power outlet.  
+     A lamp is a good choice for testing UPSs because they draw 
+     a known amount of power in watts.  If you want to, you can 
+     compute an estimate of the power drawn by your system in 
+     watts (watts = voltage * amperage), otherwise 200 watts is a 
+     good round number for most fair sized desktop systems.
+
+ (5) Turn the lamp(s) and the UPS on.  The lamp(s) should be on 
+     now, if they aren't check your power strip and UPS.
+
+     * Make sure the UPS is turned on.  Are there any status 
+       lights lit?  If not, check the UPS's power source.  Most 
+       will only supply power after a failure and will not do so 
+       if plugged into a dead circuit.
+
+     * Try plugging a lamp into the power strip.  If the light 
+       comes on, and your UPS has been charging for the 
+       manufacturer's recommended period, and is not supplying 
+       power you may have a defective UPS.
+
+     * If the power strip isn't providing power, try another 
+       outlet.  If that doesn't fix the problem, try another 
+       power strip.
+
+ (6) Turn the power strip off.  The UPS alarm should sound, and 
+     after a couple of seconds, the shutdown announcement should 
+     appear on the console.  If the announcement doesn't appear, 
+     try the following trouble-shooting tips, cycling power from 
+     the power strip each time:
+
+     * Make sure genpowerd is running on the correct serial 
+       device.
+
+     * Make sure that your /etc/inittab contains the lines added 
+       under Section 2.2.4.  As root run the following command to 
+       force init to reread /etc/inittab:
+
+            telinit q
+
+     * Check to see that the /etc/genpowerfail script is 
+       correctly configured.
+
+     * Check the genpowerd.h file it may not be configured 
+       properly.  Remember that all high or low values refer to 
+       the normal operating state and not the failure mode (which 
+       is what is listed in most documentation).  Also remember 
+       that you will have to recompile genpowerd after you change 
+       genpowerd.h for the changes to take effect.
+
+     * If the lamp goes out and the UPS turns off immediately 
+       after switching the power off on the power strip, you have 
+       cable power set to the line that should be controlling the 
+       inverter kill in your genpowerd.h.  The genpowerd daemon 
+       is holding the line high that tells the UPS to kill the 
+       inverter during a power failure!
+
+ (7) Turn the power strip back on.  The lamp(s) should remain on, 
+     and a message stating that the shutdown has been halted 
+     should appear on the screen.  If not, see the 
+     troubleshooting steps in (6).
+
+ (8) Shut the power strip off again.  The UPS's alarm should 
+     sound again, and your system should initiate another 
+     shutdown.  Wait until the system shuts down.
+
+     If you have the inverter kill option configured, the UPS 
+     should have gone off right before the system started to 
+     reboot.  Turn the power strip back on before your system 
+     finishes rebooting, the lamp(s) should come back on.  If 
+     this didn't happen, check the genpowerd.h settings for 
+     inverter shutdown and make sure that your shutdown script is 
+     running genpowerd with the "-k" option and the correct 
+     serial device.
+
+     If you are not using the inverter kill option, your system 
+     should have halted after shutdown.  Turn the UPS back on and 
+     reset your Linux system.
+
+ (9) Check that genpowerd is running on the correct serial device 
+     after the system has rebooted.  If it isn't check your 
+     rc.local file for errors.
+
+(10) PROCEED WITH STEP 10 ONLY IF YOU HAVE THE LOWBATTERY 
+     DETECTION OPTION CONFIGURED.  Turn the power strip off.  
+     When the delayed shutdown message appears, enter the 
+     following command as the root user:
+
+          shutdown -c
+
+     This will cancel the delayed shutdown.  With the power strip 
+     still in the off position wait for the system to initiate an 
+     immediate shutdown due to a low battery.  If this does not 
+     happen, i.e. the UPS shuts off and the system never 
+     initiates another shutdown:
+
+     * Check the low battery configuration in the genpowerd.h 
+       file.  Remember if you make any changes, you will have to 
+       recompile genpowerd.
+
+     * Let the UPS recharge for a couple of hours to get it out 
+       of the low battery range before you repeat step 10 again.
+
+(11) Congratulations, if you gotten this far, and everything 
+     worked as planned, you are ready for a hot test.
+
+
+3.2.  Hot Testing
+
+In this section we will be testing the UPS while it is providing 
+power to your system.  It is essential that your system passed 
+the bench tests in section 3.1 before you begin hot testing.  
+Most of the trouble shooting steps were listed in Section 3.1, if 
+you have problems please refer back to this section.
+
+To hot test your system:
+
+ (1) With the UPS still plugged into a power strip, make sure the 
+     power strip is on and the UPS has recharged.  Shut your 
+     Linux system down and plug it into the electrical outlets on 
+     the UPS.  DO NOT PLUG LASER PRINTERS INTO THE UPS!  Start 
+     your system up.
+
+     I use a drafting lamp with a low wattage bulb (40 watts) to 
+     simulate a high load on the systems disks.  You may want to 
+     do something similar.  Log on as the root user and sync the 
+     disks often during these tests.
+
+ (2) Turn off the power strip.  You should see a message come up 
+     on the console that a delayed shutdown has been initiated 
+     (two minutes in the default setup).
+
+ (3) Turn the power strip back on. You should see a message come 
+     up on the console that the pending shutdown canceled.
+
+ (4) Turn off the power strip.  You should see a message come up 
+     on the console that a delayed shutdown has been initiated 
+     (two minutes in the default setup).  Wait until the system 
+     shuts down.
+
+     If the system has the inverter kill option configured, and 
+     the system boots with the disks in an unclean state, you may 
+     have to adjust the length of the pause before inverter 
+     shutdown in the rc.0 file.
+
+ (5) Restart your system.
+
+     If you are using the inverter kill option, simply turn the 
+     power strip back on.  The UPS should come back on and your 
+     system should reboot.
+
+     If you are not using the inverter kill option, turn the 
+     power strip back on and reset your system.
+
+ (6) PROCEED WITH STEP 6 ONLY IF YOU HAVE THE LOWBATTERY 
+     DETECTION OPTION CONFIGURED.  Turn the power strip off.  
+     When the delayed shutdown message appears, enter the 
+     following command as the root user:
+
+          shutdown -c
+
+     This will cancel the delayed shutdown.  With the power strip 
+     still in the off position wait for the system to initiate an 
+     immediate shutdown due to a low battery.
+
+ (7) Congratulations!  If you passed the hot testing, you are 
+     done.  You now have a Linux box with UPS monitoring 
+     installed, configured, and tested.  The thoughts of power 
+     outages will no longer strike fear into your heart.  Relax, 
+     have a virtual (or real) beer and pat yourself on the back.
+-14-
+
+

@@ -1,0 +1,74 @@
+This is the 1.0.1 release of the genpower (Generic Power 
+Monitoring for Linux) package.  In reality, this is a maintenance 
+release of the unipower package under a new name.  I was 
+requested to change the name by a firm that is marketing software 
+under the name UniPOWER.
+
+
+NEW FEATURES:
+
+ * Users can now select from preconfigured UPS and cable 
+   configurations at runtime.  With a sufficient body of UPS and 
+   cable configurations, this should allow most users to just 
+   compile genpower 'right out of the box' and select the desired 
+   configuration while installing.
+
+ * genpower will return an error code if it is unable to kill the 
+   UPS's inverter during the shutdown process.  This allows for 
+   better error handling.
+
+ * genpower can now use the serial data transmit line for 
+   inverter shutdown with the normal command syntax.
+
+
+WHAT GENPOWER DOES:
+
+The genpower package is basically a hack of Miquel van 
+Smoorenburg's powerd daemon, which is distributed in the SysVInit 
+package.  The express aim of the genpower package is to add 
+additional functionally and a simpler means of configuring UPS 
+monitoring, in a full featured suite that can be configured to 
+work with most UPSs featuring an RS232 monitoring port.
+
+Depending on the UPS, cable, and the manner in which the genpower 
+package is configured, the genpower package provides the 
+following features:
+
+ * Line power sensing, to detect when the power has failed and 
+   initiate a delayed shutdown, or other appropriate actions.  
+   This facility also allows the system to cancel the shutdown if 
+   power is restored before the system is shutdown.
+
+ * Low battery detection, to detect when the UPS's battery is 
+   running low and initiate an immediate shutdown.
+
+ * Physical cable detection, to detect connection errors.
+
+ * The ability to kill the UPS's inverter.  This shuts the 
+   inverter on the UPS off, to prevent the system from draining 
+   the UPS's battery after it has shutdown.  This allows the 
+   system to restart itself, as if the power had been turned on 
+   when line power is restored. 
+
+   Additionally, this helps the UPS to retain enough power to 
+   deal with power yo-yos, where the power comes up and goes down 
+   several times before being fully restored.
+
+ * The unitest program, included in the genpower package, will 
+   monitor the status of a serial line and report changes in the 
+   status of the line.  The information provided by unitest can 
+   then be used to configure the genpower package for your UPS 
+   and cable combination.
+
+Instructions for configuring the genpower package are contained 
+in the documentation (genpower.docs) and should be read carefully 
+before proceeding.
+
+Please let me know if you find any problems, if you have 
+suggestions for enhancing the package, or if you have information 
+on connecting genpower to a UPS that isn't covered in the 
+documentation.
+
+Tom Webster
+webster@kaiwan.com
+07/07/95

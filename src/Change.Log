@@ -1,0 +1,91 @@
+genpower Change Log
+
+1.0.1 (1995/07/07)
+
+The package has been renamed to genpower (Generic Power 
+Monitoring for Linux).  After the release of unipower 1.0.0, I 
+was informed by Kendall Bennett that the firm he is employed by 
+(SciTech Software of Southbank Australia) already has a product 
+named UniPOWER.  Their product to quote Ken "is a set of DPMS 
+Monitor power management utilities and screensavers for DOS and 
+Windows (maybe Linux one day)."  They politely asked me to change 
+the name, so I did.  If you want any information on SciTech 
+Software's UniPOWER product, Ken's e-mail address is 
+KendallB@scitechsoft.com.
+
+Erwin Authried, dropped me a line offering some patches if I 
+wanted to have unipower be configurable at run time.  Turns out 
+that Erwin pretty much rewrote a good portion of unipowerd, and 
+did it a lot better than I probably could have.  He also provided 
+cable information for his Victron Lite UPS.
+
+Marek Michalkiewicz also sent patches to enable unipower to use 
+the serial data transmit lines to shut the inverter down, and to 
+check that the inverter was actually killed.  Marek also provided 
+a Linux specific APC cable, and a host of good comments to the 
+documentation.
+
+This is pretty much maintenance release to incorporate Erwin and 
+Marek's patches, change the name, and do a little cleaning up.  
+I'm still trying to get some of the stuff in the TODO list done 
+(I'm also planning on including it in the distribution this time 
+:->).
+
+
+1.0.0 (1995/04/09)
+
+The first general release of the unipower package.
+
+Changed Jim Ockers' cable design and added warning about APC 
+Back-UPS 400 series UPSs not providing +24V, per Jim's feedback.  
+Also made some spelling corrections to the source code at Jim's 
+request.
+
+At Corey Sweeny's request, I tried to make the plea to use 
+commercial cables a little stronger.  Neither of us are wizards 
+with a soldering iron and I don't think we should expect unipower 
+users to be either.  This makes the homebrewed cables a weak link 
+in the reliability of the package.  I plan to continue 
+presenting, and even expanding, the section on homebrewed cables 
+for those users who feel comfortable using them.
+
+There were no real programmatic changes to the unipower package 
+between the 0.2.2 beta and version 1.0.0.  I hope this means that 
+it is working well for all of the beta testers, and will work 
+well for the Linux community.
+
+
+0.2.2 beta (1995/02/14)
+
+Added additional logging to unipowerd.  More changes to the 
+documentation.  Added unitest to the package.  Fixed stupid 
+problem in unipowerfail to allow LOWBATTERY conditions to be 
+handled properly.  Several new cable for APC UPSs contributed by 
+beta testers.  Added INVERTERTIME define to unipowerd.h files to 
+allow configuration of the amount of time INVERTERBIT is held 
+high.
+
+***** SWITCHED HIGH/LOW VALUES IN THE PROVIDED unipowerd.h FILES.
+***** The old configuration files should still work, but users 
+***** should adopt the new terminology since it is a little 
+***** saner.
+
+
+0.2.1 beta (1995/01/15)
+
+Documentation has been cleaned up some more.  Programs synched to 
+a consistent revision number (equal to the release).
+
+
+0.2 beta (1994/11/04)
+
+First version to be released for limited beta testing.  First 
+rough draft of documentation.  Added -k option to unipowerd.  
+Removed unikill from the package as redundant.  Created unified 
+Makefile for unipowerd package.  General cleanup of unipower 
+package.
+
+
+0.1 beta (1994/04/20)
+
+First version of unipower package.  Not released to public.
