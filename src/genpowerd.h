@@ -69,41 +69,70 @@ typedef struct{
 /*                                                                      */
 /************************************************************************/
 
+#define UPS_TXD_KILL_INVERTER 	1	/* Transmit data to kill inverter */
+
 struct {
-	int id;	/* Used to select specific commands */
         char *tag;
         LINE    cablepower, kill;               /* outputs -> INACTIVE Level*/
         int     killtime;                       /* killtime 0 -> Option -k is not supported ! */
         LINE    powerok,battok,cableok;         /* inputs */
+	int	flags;				/* Cf. #defines above */
         } *pups,ups[] = {
 
 /* The lines inside these brackets may be edited to fit your UPS/cable.  Do NOT remove the {NULL} entry! */
 
-/* id type          cablep1        kill           t  powerok        battok         cableok */
+/* type          cablep1        kill           t  powerok        battok         cableok 	flags*/
 
 /* Miquel's powerd cable */
- {0, "powerd",      {TIOCM_RTS,0}, {TIOCM_DTR,1}, 0, {TIOCM_CAR,0}, {0,0},         {TIOCM_DSR,0}},
+ {"powerd",      {TIOCM_RTS,0}, {TIOCM_DTR,1}, 0, {TIOCM_CAR,0}, {0,0},         {TIOCM_DSR,0}, 0},
 
 /* Classic TrippLite */
- {1, "tripp-class", {TIOCM_RTS,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,0}, {0,0},         {0,0}},
+ {"tripp-class", {TIOCM_RTS,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,0}, {0,0},         {0,0}, 0},
 
 /* TrippLite WinNT */
- {2, "tripp-nt",    {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,1}, {0,0}},
+ {"tripp-nt",    {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,1}, {0,0}, 0},
 
 /* Lam's APC Back-UPS, Victron Lite WinNT */
- {3, "apc1-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}},
+ {"apc1-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
 
 /* Jim's APC Back-UPS WinNT */
- {4, "apc2-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,0}, {0,0}},
+ {"apc2-nt",     {TIOCM_RTS,0}, {TIOCM_DTR,1}, 5, {TIOCM_CTS,1}, {TIOCM_CAR,0}, {0,0}, 0},
 
 /* Marek's APC Back-UPS */
- {5, "apc-linux",   {TIOCM_DTR,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,1}, {TIOCM_DSR,0}, {0,0}},
+ {"apc-linux",   {TIOCM_DTR,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,1}, {TIOCM_DSR,0}, {0,0}, 0},
 
-/* Feb/05/2001 Tripplite Omnismart 450 PNP
+/* 2001-02-05 Tripplite Omnismart 450 PNP
    Jhon H. Caicedo <jhcaiced@osso.org.co> O.S.S.O */
- {6, "omnismart-pnp",  {TIOCM_RTS,1}, {TIOCM_RTS,1},  5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}},
+ {"omnismart-pnp",  {TIOCM_RTS,1}, {TIOCM_RTS,1},  5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, UPS_TXD_KILL_INVERTER},
 
- {-1, NULL}
+/* 2001-12-24 OneUPS+
+   Thomas Quinot <thomas@cuivre.fr.eu.org> */
+ {"oneups",   {0,0}, {TIOCM_ST,1},  5, {TIOCM_CTS,1}, {TIOCM_CAR,0}, {TIOCM_CAR,0}, 0},
+
+/* Adrian's TrippLite OmniSmart PNP 675 */
+ {"tripp-omni", {TIOCM_RTS,1}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
+ {"tripp-omini", {TIOCM_RTS,1}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
+ /* second entry (with a typo) retained for backward compatibility. */
+
+/* Brian's APC Back-UPS Pro */
+ {"apc-advanced",{TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_CAR,0}, {TIOCM_RNG,0}, {TIOCM_DSR,0}, 0},
+
+/* Chris Hansen's APC Back-UPS Pro PNP, APC cable #940-0095A */
+ {"apc-pnp",    {TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_RNG,1}, {TIOCM_CAR,1}, {TIOCM_DSR,0}, 0},
+
+/* TrippLite PNP with furnished cable */
+ {"tripp-pnp",  {TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {0,0}, 0},
+
+/* Blackout Buster UPS, standard cable */
+ {"blackout-buster",{TIOCM_DTR,0},{TIOCM_ST,1}, 0, {TIOCM_CTS,0}, {TIOCM_CAR,0}, {TIOCM_DSR,0}, 0},
+
+/* "GmgH" model "USV 500P" (by Massimiliano Giorgi <ma.giorgi@flashnet.it>) */
+ {"gmbh-usv",   {TIOCM_DTR,0}, {TIOCM_RTS,1}, 5, {TIOCM_CAR,0}, {TIOCM_CTS,0}, {TIOCM_DSR,0}, 0},
+
+/* Trust Energy Protector 400/650, as found in the UPS HOWTO */
+ {"trust-energy",{TIOCM_DTR,0}, {TIOCM_ST,1},  5, {TIOCM_CAR,0}, {TIOCM_CTS,0}, {TIOCM_DSR,0}, 0},
+
+ {NULL}
 };
 
 /* The following are the RS232 control lines      */
@@ -120,8 +149,18 @@ struct {
 /* TIOCM_DSR       DSR - Data Signal Ready    <-- */
 /* TIOCM_ST        ST  - Data Xmit            --> */
  
+#if defined (__Linux__) && !defined (NEWINIT)
+/* Create a flag file for Miquel van Smoorenburg's SysV init. */
 #define PWRSTAT         "/etc/powerstatus"
+#endif
+
+#ifndef UPSSTAT
 #define UPSSTAT		"/etc/upsstatus"
+#endif
+
+#ifndef RC_POWERFAIL
+#define RC_POWERFAIL	"/etc/rc.powerfail"
+#endif
 
 /************************************************************************/
 /* End of File genpowerd.h                                              */
