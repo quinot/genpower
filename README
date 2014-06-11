@@ -3,7 +3,7 @@ genpower README
 
 $Id$
 
-This is the 1.0.3 release of the genpower (Generic Power 
+This is the 1.0.5 release of the genpower (Generic Power 
 Monitoring for *nix) package. Genpower was once known as Unipower,
 but its name was changed because of trademark issues.
 
@@ -12,9 +12,21 @@ and was subsequently modified by:
   Brian White <bcwhite@pobox.com>
   Jhon H. Caicedo O. <jhcaiced@osso.org.co>
   Thomas Quinot <thomas@cuivre.fr.eu.org>
+  Nico Augustijn <genpower@nico-augustijn.com>
 
-The project is now hosted as SourceForge:
-  http://genpower.sourceforge.net/
+The project is now hosted on github:
+  https://github.com/quinot/genpower
+
+FEATURES ADDED IN 1.0.5
+
+ * Battery failure logging
+
+FEATURES ADDED IN 1.0.4
+
+ * Corrected problem copying strings from config file
+ * Now reads config file during startup
+ * Minor source-code cleanup
+ * Write messages to syslog
 
 FEATURES ADDED IN 1.0.3
 

@@ -189,6 +189,7 @@ main(int argc, char **argv)
     int             pstatus, poldstat = 1;
     int             bstatus, boldstat = 1;
     int             count = 0;
+    int             bcount = 0;
     int             tries = 0;
     int             ikill = 0;
     int             ioctlbit;
@@ -425,10 +426,28 @@ main(int argc, char **argv)
 		    /* Power is out and Battery is now low, SCRAM! */
 		    syslog(LOG_ALERT, "UPS battery power is low!");
 		    powerfail(PFM_SCRAM);
+		} else {
+		    /* Battery status has changed */
+		    if (bstatus) {
+			/* Battery power is back */
+			syslog(LOG_ALERT, "UPS battery power is now OK");
+		    }		/* if (!bstatus) */
 		}		/* if (!bstatus && !pstatus) */
 	    }			/* if (bstatus != boldstat) */
 	}			/* if (pstatus != poldstat || bstatus !=
 				 * boldstat) */
+
+	if (!bstatus && pstatus) {
+	    /* Line power is OK and UPS signals battery is low */
+	    /* Log a message to the syslog every 10 minutes */
+	    if ((bcount % 300) == 0)
+		syslog(LOG_ALERT, "UPS battery power is low!");
+	    bcount++;
+	} else {
+	    /* Reset count */
+	    bcount = 0;
+	}			/* if (!bstatus && pstatus) */
+
 	/* Reset count, remember status and sleep 2 seconds. */
 	count = 0;
 	poldstat = pstatus;

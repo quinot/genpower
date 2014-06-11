@@ -3,7 +3,7 @@
 # $Id$
 #
 
-NAME=		genpower-1.0.4
+NAME=		genpower-1.0.5
 BINDIR=		/sbin
 SCRIPTDIR=	/etc
 CONFDIR=	/etc
