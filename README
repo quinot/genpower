@@ -3,7 +3,7 @@ genpower README
 
 $Id$
 
-This is the 1.0.5 release of the genpower (Generic Power 
+This is the 1.0.6 release of the genpower (Generic Power 
 Monitoring for *nix) package. Genpower was once known as Unipower,
 but its name was changed because of trademark issues.
 
@@ -17,9 +17,13 @@ and was subsequently modified by:
 The project is now hosted on github:
   https://github.com/quinot/genpower
 
-FEATURES ADDED IN 1.0.5
+FEATURES ADDED IN 1.0.6
 
  * Battery failure logging
+
+FEATURES ADDED IN 1.0.5
+
+ * Fix inverter kill time computation
 
 FEATURES ADDED IN 1.0.4
 
